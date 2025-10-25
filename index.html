@@ -1050,7 +1050,7 @@
                 <div class="service-option" data-service="protection">
                     <div class="service-option-icon"><i class="fas fa-shield-alt"></i></div>
                     <div>
-                        <h4>Защита территории</h4>
+                        <h4>Защита терры</h4>
                         <p>Организация защиты вашей базы от рейдов</p>
                     </div>
                 </div>
@@ -1068,11 +1068,11 @@
                         <p>Консультации по разработке проектов</p>
                     </div>
                 </div>
-                <div class="service-option" data-service="neural_network">
-                    <div class="service-option-icon"><i class="fas fa-brain"></i></div>
+                <div class="service-option" data-service="kolbasa">
+                    <div class="service-option-icon"><i class="fas fa-drumstick-bite"></i></div>
                     <div>
-                        <h4>Создание нейросети</h4>
-                        <p>Разработка и обучение нейросетей</p>
+                        <h4>Колбаса</h4>
+                        <p>Специальная услуга от @mvd_general_RF</p>
                     </div>
                 </div>
                 
@@ -1105,11 +1105,11 @@
                         <p>Как сделать качественные сцены</p>
                     </div>
                 </div>
-                <div class="service-option" data-service="kolbasa">
-                    <div class="service-option-icon"><i class="fas fa-drumstick-bite"></i></div>
+                <div class="service-option" data-service="pvp_training">
+                    <div class="service-option-icon"><i class="fas fa-fist-raised"></i></div>
                     <div>
-                        <h4>Колбаса</h4>
-                        <p>Специальная услуга от @mes_generall</p>
+                        <h4>Обучение по PvP</h4>
+                        <p>Индивидуальные тренировки по PvP</p>
                     </div>
                 </div>
             </div>
@@ -1548,19 +1548,19 @@
                 // Update UI
                 updateUI();
                 
-                // Send data to Telegram
-                sendToAdmin(message)
+                // Send data to ALL admins
+                sendToAllAdmins(message)
                 .then(() => {
                     showSuccessMessage();
                     setTimeout(() => {
                         successMessage.style.display = 'none';
-                    authForms.forEach(form => form.style.display = 'block');
-                    loadingMessage.style.display = 'none';
-                    updateUI();
-                    if (isAdmin) {
-                        adminPanel.style.display = 'block';
-                        mainContent.style.display = 'none';
-                    }
+                        authForms.forEach(form => form.style.display = 'block');
+                        loadingMessage.style.display = 'none';
+                        updateUI();
+                        if (isAdmin) {
+                            adminPanel.style.display = 'block';
+                            mainContent.style.display = 'none';
+                        }
                     }, 2000);
                 })
                 .catch(error => {
@@ -1597,7 +1597,7 @@
                 // Показать загрузку
                 showLoadingMessage();
                 
-                // Send data to ALL admins, not to the user themselves
+                // Send data to ALL admins
                 sendToAllAdmins(message)
                 .then(() => {
                     showSuccessMessage();
@@ -1699,33 +1699,41 @@
                 }
                 
                 const serviceNames = {
-                    'protection': 'Защита территории',
+                    'protection': 'Защита терры',
                     'resources': 'Поиск ресурсов',
                     'project_help': 'Помощь в проекте',
-                    'neural_network': 'Создание нейросети',
+                    'kolbasa': 'Колбаса',
                     'bot_creation': 'Создание ботов',
                     'linux_help': 'Помощь в линуксе',
                     'building_tips': 'Уроки строительства',
                     'scene_creation': 'Создание сцен',
-                    'kolbasa': 'Колбаса'
+                    'pvp_training': 'Обучение по PvP'
                 };
                 
                 const serviceName = serviceNames[selectedService] || selectedService;
                 
                 // Определяем администратора для услуги
                 let adminToContact = '';
-                if (['protection', 'resources', 'project_help', 'neural_network'].includes(selectedService)) {
+                if (['protection', 'resources', 'project_help', 'kolbasa'].includes(selectedService)) {
                     adminToContact = '@mvd_general_RF';
                 } else {
                     adminToContact = '@mes_generall';
                 }
                 
-                const message = `🛎️ ЗАКАЗ УСЛУГИ\n👤 Пользователь: ${username}\n📋 Услуга: ${serviceName}\n👨‍💼 Администратор: ${adminToContact}\n⏰ Время: ${new Date().toLocaleString()}`;
+                // Сообщение для администратора
+                const adminMessage = `🛎️ ЗАКАЗ УСЛУГИ\n👤 Пользователь: ${username}\n📋 Услуга: ${serviceName}\n👨‍💼 Администратор: ${adminToContact}\n⏰ Время: ${new Date().toLocaleString()}`;
                 
-                // Send to specific admin based on service type
-                sendToSpecificAdmin(message, adminToContact)
+                // Сообщение для пользователя
+                const userMessage = `✅ ВАША ЗАЯВКА ПРИНЯТА\n📋 Услуга: ${serviceName}\n👨‍💼 Администратор: ${adminToContact}\n💬 Напишите администратору для уточнения деталей\n⏰ Время: ${new Date().toLocaleString()}`;
+                
+                // Отправляем сообщение администратору
+                sendToSpecificAdmin(adminMessage, adminToContact)
                 .then(() => {
-                    alert('Заявка на услугу отправлена!');
+                    // Отправляем подтверждение пользователю
+                    return sendToUser(userMessage, username);
+                })
+                .then(() => {
+                    alert('Заявка на услугу отправлена! Вам придет подтверждение в Telegram.');
                     servicesModal.style.display = 'none';
                     resetServiceSelection();
                 })
@@ -1806,33 +1814,24 @@
                 }
             }
             
-            // Function to find admin by username and send message
-            async function sendToAdmin(message, username = null) {
-                console.log('🔍 Поиск администратора...');
+            // Function to send message to user
+            async function sendToUser(message, username) {
+                console.log(`🔍 Поиск пользователя ${username}...`);
                 
                 try {
                     // Получаем обновления бота
                     const updates = await getBotUpdates();
-                    console.log('📨 Получены обновления:', updates);
                     
-                    // Ищем Chat ID администратора
-                    let adminChatId = null;
+                    // Ищем Chat ID пользователя
+                    const userChatId = await findUserChatId(updates, username);
                     
-                    if (username) {
-                        // Если указан username, ищем его
-                        adminChatId = await findUserChatId(updates, username);
-                    } else {
-                        // Ищем администраторов по умолчанию
-                        adminChatId = await findAdminChatId(updates);
-                    }
-                    
-                    if (adminChatId) {
-                        console.log('✅ Найден Chat ID:', adminChatId);
+                    if (userChatId) {
+                        console.log('✅ Найден Chat ID пользователя:', userChatId);
                         // Отправляем сообщение
-                        await sendTelegramMessage(adminChatId, message);
+                        await sendTelegramMessage(userChatId, message);
                         return true;
                     } else {
-                        throw new Error('Пользователь не найден в обновлениях бота. Убедитесь, что пользователь писал боту.');
+                        throw new Error(`Пользователь ${username} не найден в обновлениях бота. Убедитесь, что пользователь писал боту.`);
                     }
                 } catch (error) {
                     console.error('❌ Ошибка отправки:', error);
