@@ -21,6 +21,7 @@
             --border: #e0e0e0;
             --success: #2e7d32;
             --error: #c62828;
+            --warning: #f57c00;
         }
         
         * {
@@ -126,6 +127,24 @@
         .btn-primary {
             background: white;
             color: var(--primary);
+        }
+        
+        .btn-danger {
+            background: var(--error);
+            color: white;
+            border-color: var(--error);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+            border-color: var(--warning);
         }
         
         /* Auth Forms */
@@ -511,8 +530,10 @@
             border-radius: 12px;
             padding: 30px;
             width: 90%;
-            max-width: 500px;
+            max-width: 600px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-height: 90vh;
+            overflow-y: auto;
         }
         
         .modal-header {
@@ -562,6 +583,135 @@
             font-size: 24px;
         }
         
+        /* Admin Panel */
+        .admin-panel {
+            display: none;
+        }
+        
+        .admin-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .admin-tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            color: var(--text-light);
+        }
+        
+        .admin-tab.active {
+            color: var(--primary);
+        }
+        
+        .admin-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--primary);
+        }
+        
+        .admin-content {
+            display: none;
+        }
+        
+        .admin-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .admin-table th,
+        .admin-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .admin-table th {
+            background: var(--background);
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .admin-table tr:hover {
+            background: var(--background);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .edit-btn {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .delete-btn {
+            background: var(--error);
+            color: white;
+        }
+        
+        .add-btn {
+            background: var(--success);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+        
         /* Responsive */
         @media (max-width: 992px) {
             .main-content {
@@ -571,6 +721,10 @@
             .footer-content {
                 grid-template-columns: 1fr;
                 gap: 20px;
+            }
+            
+            .admin-tabs {
+                flex-wrap: wrap;
             }
         }
         
@@ -586,6 +740,14 @@
             
             .services-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .admin-table {
+                font-size: 14px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
             }
         }
     </style>
@@ -606,6 +768,7 @@
                 <div class="user-menu">
                     <button class="btn" id="loginBtn"><i class="fas fa-user"></i> Войти</button>
                     <button class="btn btn-primary" id="registerBtn"><i class="fas fa-user-plus"></i> Регистрация</button>
+                    <button class="btn btn-warning" id="adminBtn" style="display: none;"><i class="fas fa-cog"></i> Админка</button>
                 </div>
             </div>
         </div>
@@ -739,6 +902,124 @@
                 </section>
             </main>
         </div>
+        
+        <!-- Admin Panel -->
+        <div class="admin-panel" id="adminPanel">
+            <div class="status-panel">
+                <div class="status-header">
+                    <h2>АДМИНИСТРАТИВНАЯ ПАНЕЛЬ КЛАНА МВД</h2>
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <div class="status-text">РЕЖИМ АДМИНИСТРАТОРА</div>
+                    </div>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalMembers">24</div>
+                        <div class="stat-label">Участников клана</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="activeEvents">3</div>
+                        <div class="stat-label">Активных ивентов</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="warehouseItems">156</div>
+                        <div class="stat-label">Предметов на складе</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="pendingRequests">5</div>
+                        <div class="stat-label">Заявок на рассмотрении</div>
+                    </div>
+                </div>
+                
+                <div class="admin-tabs">
+                    <div class="admin-tab active" data-tab="members">Управление составом</div>
+                    <div class="admin-tab" data-tab="events">Управление ивентами</div>
+                    <div class="admin-tab" data-tab="warehouse">Управление складом</div>
+                    <div class="admin-tab" data-tab="requests">Заявки на вступление</div>
+                </div>
+                
+                <!-- Members Management -->
+                <div class="admin-content active" id="membersContent">
+                    <button class="add-btn" id="addMemberBtn"><i class="fas fa-plus"></i> Добавить участника</button>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Никнейм</th>
+                                <th>Telegram</th>
+                                <th>Звание</th>
+                                <th>Статус</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="membersTable">
+                            <!-- Данные будут заполнены через JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Events Management -->
+                <div class="admin-content" id="eventsContent">
+                    <button class="add-btn" id="addEventBtn"><i class="fas fa-plus"></i> Создать ивент</button>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Название</th>
+                                <th>Дата</th>
+                                <th>Участники</th>
+                                <th>Статус</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="eventsTable">
+                            <!-- Данные будут заполнены через JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Warehouse Management -->
+                <div class="admin-content" id="warehouseContent">
+                    <button class="add-btn" id="addItemBtn"><i class="fas fa-plus"></i> Добавить предмет</button>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Название</th>
+                                <th>Количество</th>
+                                <th>Категория</th>
+                                <th>Последнее обновление</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="warehouseTable">
+                            <!-- Данные будут заполнены через JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Requests Management -->
+                <div class="admin-content" id="requestsContent">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Никнейм</th>
+                                <th>Telegram</th>
+                                <th>Звание</th>
+                                <th>Дата заявки</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requestsTable">
+                            <!-- Данные будут заполнены через JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
     
     <!-- Modal for services -->
@@ -787,6 +1068,19 @@
         </div>
     </div>
     
+    <!-- Modal for admin actions -->
+    <div class="modal" id="adminModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="adminModalTitle">Добавить участника</h2>
+                <button class="close-modal" id="closeAdminModal">&times;</button>
+            </div>
+            <div id="adminModalContent">
+                <!-- Контент будет заполнен через JavaScript -->
+            </div>
+        </div>
+    </div>
+    
     <footer>
         <div class="container">
             <div class="footer-content">
@@ -826,8 +1120,10 @@
             // Elements
             const authContainer = document.getElementById('authContainer');
             const mainContent = document.getElementById('mainContent');
+            const adminPanel = document.getElementById('adminPanel');
             const loginBtn = document.getElementById('loginBtn');
             const registerBtn = document.getElementById('registerBtn');
+            const adminBtn = document.getElementById('adminBtn');
             const authTabs = document.querySelectorAll('.auth-tab');
             const authForms = document.querySelectorAll('.auth-form');
             const loginForm = document.getElementById('loginFormElement');
@@ -840,12 +1136,268 @@
             const sendServiceRequest = document.getElementById('sendServiceRequest');
             const serviceOptions = document.querySelectorAll('.service-option');
             const logoutBtn = document.getElementById('logoutBtn');
+            const adminTabs = document.querySelectorAll('.admin-tab');
+            const adminContents = document.querySelectorAll('.admin-content');
+            const adminModal = document.getElementById('adminModal');
+            const closeAdminModal = document.getElementById('closeAdminModal');
+            const adminModalTitle = document.getElementById('adminModalTitle');
+            const adminModalContent = document.getElementById('adminModalContent');
             
             // Telegram bot configuration
             const TELEGRAM_BOT_TOKEN = '8249371074:AAHrRtSF-smyiQrQz4zTxrHW38UtRwVLsNU';
+            const ADMIN_USERNAMES = ['mvd_general_rf', 'mes_generall'];
             
             // Selected service
             let selectedService = null;
+            let currentUser = null;
+            let isAdmin = false;
+            
+            // Mock data for admin panel
+            const mockData = {
+                members: [
+                    { id: 1, nickname: 'mvd_general', telegram: '@mvd_general_rf', rank: 'Генерал', status: 'Активен' },
+                    { id: 2, nickname: 'mes_generall', telegram: '@mes_generall', rank: 'Генерал', status: 'Активен' },
+                    { id: 3, nickname: 'Soldier_01', telegram: '@soldier01', rank: 'Сержант', status: 'Активен' },
+                    { id: 4, nickname: 'Guard_007', telegram: '@guard007', rank: 'Лейтенант', status: 'Неактивен' }
+                ],
+                events: [
+                    { id: 1, name: 'Рейд на базу врага', date: '2024-01-15 20:00', participants: '12/20', status: 'Запланирован' },
+                    { id: 2, name: 'Тренировка PvP', date: '2024-01-16 19:00', participants: '8/15', status: 'Запланирован' },
+                    { id: 3, name: 'Сбор ресурсов', date: '2024-01-14 18:00', participants: '15/15', status: 'Завершен' }
+                ],
+                warehouse: [
+                    { id: 1, name: 'Алмазы', quantity: '64', category: 'Ресурсы', updated: '2024-01-13' },
+                    { id: 2, name: 'Железо', quantity: '128', category: 'Ресурсы', updated: '2024-01-13' },
+                    { id: 3, name: 'Золото', quantity: '32', category: 'Ресурсы', updated: '2024-01-12' },
+                    { id: 4, name: 'Элитные мечи', quantity: '5', category: 'Оружие', updated: '2024-01-10' }
+                ],
+                requests: [
+                    { id: 1, nickname: 'NewPlayer', telegram: '@newplayer', rank: 'Рядовой', date: '2024-01-13' },
+                    { id: 2, nickname: 'ProBuilder', telegram: '@probuilder', rank: 'Сержант', date: '2024-01-12' }
+                ]
+            };
+            
+            // Initialize admin panel data
+            function initializeAdminPanel() {
+                populateTable('membersTable', mockData.members, 'member');
+                populateTable('eventsTable', mockData.events, 'event');
+                populateTable('warehouseTable', mockData.warehouse, 'warehouse');
+                populateTable('requestsTable', mockData.requests, 'request');
+            }
+            
+            // Populate table with data
+            function populateTable(tableId, data, type) {
+                const table = document.getElementById(tableId);
+                table.innerHTML = '';
+                
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    
+                    // Add columns based on type
+                    Object.values(item).forEach(value => {
+                        const cell = document.createElement('td');
+                        cell.textContent = value;
+                        row.appendChild(cell);
+                    });
+                    
+                    // Add action buttons
+                    const actionsCell = document.createElement('td');
+                    actionsCell.className = 'action-buttons';
+                    
+                    if (type === 'request') {
+                        const acceptBtn = document.createElement('button');
+                        acceptBtn.className = 'action-btn edit-btn';
+                        acceptBtn.innerHTML = '<i class="fas fa-check"></i>';
+                        acceptBtn.title = 'Принять заявку';
+                        acceptBtn.onclick = () => handleRequestAction(item.id, 'accept');
+                        
+                        const rejectBtn = document.createElement('button');
+                        rejectBtn.className = 'action-btn delete-btn';
+                        rejectBtn.innerHTML = '<i class="fas fa-times"></i>';
+                        rejectBtn.title = 'Отклонить заявку';
+                        rejectBtn.onclick = () => handleRequestAction(item.id, 'reject');
+                        
+                        actionsCell.appendChild(acceptBtn);
+                        actionsCell.appendChild(rejectBtn);
+                    } else {
+                        const editBtn = document.createElement('button');
+                        editBtn.className = 'action-btn edit-btn';
+                        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                        editBtn.title = 'Редактировать';
+                        editBtn.onclick = () => openEditModal(type, item);
+                        
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'action-btn delete-btn';
+                        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                        deleteBtn.title = 'Удалить';
+                        deleteBtn.onclick = () => deleteItem(type, item.id);
+                        
+                        actionsCell.appendChild(editBtn);
+                        actionsCell.appendChild(deleteBtn);
+                    }
+                    
+                    row.appendChild(actionsCell);
+                    table.appendChild(row);
+                });
+            }
+            
+            // Handle request actions
+            function handleRequestAction(requestId, action) {
+                const request = mockData.requests.find(r => r.id === requestId);
+                if (!request) return;
+                
+                if (action === 'accept') {
+                    alert(`Заявка от ${request.nickname} принята!`);
+                    // Add to members
+                    mockData.members.push({
+                        id: mockData.members.length + 1,
+                        nickname: request.nickname,
+                        telegram: request.telegram,
+                        rank: request.rank,
+                        status: 'Активен'
+                    });
+                } else {
+                    alert(`Заявка от ${request.nickname} отклонена!`);
+                }
+                
+                // Remove from requests
+                mockData.requests = mockData.requests.filter(r => r.id !== requestId);
+                populateTable('requestsTable', mockData.requests, 'request');
+                populateTable('membersTable', mockData.members, 'member');
+                
+                // Update stats
+                updateStats();
+            }
+            
+            // Delete item
+            function deleteItem(type, id) {
+                if (confirm('Вы уверены, что хотите удалить этот элемент?')) {
+                    mockData[type] = mockData[type].filter(item => item.id !== id);
+                    populateTable(`${type}Table`, mockData[type], type);
+                    updateStats();
+                }
+            }
+            
+            // Open edit modal
+            function openEditModal(type, item = null) {
+                const isEdit = item !== null;
+                let title = '';
+                let formHTML = '';
+                
+                switch (type) {
+                    case 'member':
+                        title = isEdit ? 'Редактировать участника' : 'Добавить участника';
+                        formHTML = `
+                            <div class="form-group">
+                                <label class="form-label">Никнейм</label>
+                                <input type="text" class="form-input" id="editNickname" value="${isEdit ? item.nickname : ''}" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Telegram</label>
+                                <input type="text" class="form-input" id="editTelegram" value="${isEdit ? item.telegram : ''}" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Звание</label>
+                                <select class="form-input" id="editRank" required>
+                                    <option value="Рядовой" ${isEdit && item.rank === 'Рядовой' ? 'selected' : ''}>Рядовой</option>
+                                    <option value="Сержант" ${isEdit && item.rank === 'Сержант' ? 'selected' : ''}>Сержант</option>
+                                    <option value="Лейтенант" ${isEdit && item.rank === 'Лейтенант' ? 'selected' : ''}>Лейтенант</option>
+                                    <option value="Капитан" ${isEdit && item.rank === 'Капитан' ? 'selected' : ''}>Капитан</option>
+                                    <option value="Майор" ${isEdit && item.rank === 'Майор' ? 'selected' : ''}>Майор</option>
+                                    <option value="Генерал" ${isEdit && item.rank === 'Генерал' ? 'selected' : ''}>Генерал</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Статус</label>
+                                <select class="form-input" id="editStatus" required>
+                                    <option value="Активен" ${isEdit && item.status === 'Активен' ? 'selected' : ''}>Активен</option>
+                                    <option value="Неактивен" ${isEdit && item.status === 'Неактивен' ? 'selected' : ''}>Неактивен</option>
+                                </select>
+                            </div>
+                        `;
+                        break;
+                    case 'event':
+                        title = isEdit ? 'Редактировать ивент' : 'Создать ивент';
+                        formHTML = `
+                            <div class="form-group">
+                                <label class="form-label">Название</label>
+                                <input type="text" class="form-input" id="editEventName" value="${isEdit ? item.name : ''}" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Дата и время</label>
+                                <input type="datetime-local" class="form-input" id="editEventDate" value="${isEdit ? item.date.replace(' ', 'T') : ''}" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Макс. участников</label>
+                                <input type="number" class="form-input" id="editEventMax" value="${isEdit ? item.participants.split('/')[1] : '20'}" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Статус</label>
+                                <select class="form-input" id="editEventStatus" required>
+                                    <option value="Запланирован" ${isEdit && item.status === 'Запланирован' ? 'selected' : ''}>Запланирован</option>
+                                    <option value="В процессе" ${isEdit && item.status === 'В процессе' ? 'selected' : ''}>В процессе</option>
+                                    <option value="Завершен" ${isEdit && item.status === 'Завершен' ? 'selected' : ''}>Завершен</option>
+                                    <option value="Отменен" ${isEdit && item.status === 'Отменен' ? 'selected' : ''}>Отменен</option>
+                                </select>
+                            </div>
+                        `;
+                        break;
+                    case 'warehouse':
+                        title = isEdit ? 'Редактировать предмет' : 'Добавить предмет';
+                        formHTML = `
+                            <div class="form-group">
+                                <label class="form-label">Название</label>
+                                <input type="text" class="form-input" id="editItemName" value="${isEdit ? item.name : ''}" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Количество</label>
+                                <input type="number" class="form-input" id="editItemQuantity" value="${isEdit ? item.quantity : ''}" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Категория</label>
+                                <select class="form-input" id="editItemCategory" required>
+                                    <option value="Ресурсы" ${isEdit && item.category === 'Ресурсы' ? 'selected' : ''}>Ресурсы</option>
+                                    <option value="Оружие" ${isEdit && item.category === 'Оружие' ? 'selected' : ''}>Оружие</option>
+                                    <option value="Броня" ${isEdit && item.category === 'Броня' ? 'selected' : ''}>Броня</option>
+                                    <option value="Инструменты" ${isEdit && item.category === 'Инструменты' ? 'selected' : ''}>Инструменты</option>
+                                    <option value="Прочее" ${isEdit && item.category === 'Прочее' ? 'selected' : ''}>Прочее</option>
+                                </select>
+                            </div>
+                        `;
+                        break;
+                }
+                
+                adminModalTitle.textContent = title;
+                adminModalContent.innerHTML = `
+                    ${formHTML}
+                    <div class="form-group">
+                        <button class="form-submit" id="saveAdminData">${isEdit ? 'Сохранить' : 'Добавить'}</button>
+                    </div>
+                `;
+                
+                // Add event listener for save button
+                document.getElementById('saveAdminData').onclick = () => saveAdminData(type, isEdit ? item.id : null);
+                
+                adminModal.style.display = 'flex';
+            }
+            
+            // Save admin data
+            function saveAdminData(type, id) {
+                // In a real app, this would send data to server
+                alert('Данные сохранены!');
+                adminModal.style.display = 'none';
+                
+                // For demo purposes, we'll just reload the table
+                initializeAdminPanel();
+            }
+            
+            // Update statistics
+            function updateStats() {
+                document.getElementById('totalMembers').textContent = mockData.members.length;
+                document.getElementById('activeEvents').textContent = mockData.events.filter(e => e.status === 'Запланирован' || e.status === 'В процессе').length;
+                document.getElementById('warehouseItems').textContent = mockData.warehouse.reduce((sum, item) => sum + parseInt(item.quantity), 0);
+                document.getElementById('pendingRequests').textContent = mockData.requests.length;
+            }
             
             // Switch between login and register tabs
             authTabs.forEach(tab => {
@@ -870,6 +1422,25 @@
                 });
             });
             
+            // Switch between admin tabs
+            adminTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab');
+                    
+                    // Update active tab
+                    adminTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show corresponding content
+                    adminContents.forEach(content => {
+                        content.classList.remove('active');
+                        if (content.id === `${targetTab}Content`) {
+                            content.classList.add('active');
+                        }
+                    });
+                });
+            });
+            
             // Login form submission
             loginForm.addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -886,13 +1457,23 @@
                     return;
                 }
                 
+                // Check if user is admin
+                const telegramUsername = username.toLowerCase();
+                isAdmin = ADMIN_USERNAMES.includes(telegramUsername);
+                currentUser = username;
+                
                 // Send data to Telegram
                 sendToAdmin(message)
                 .then(() => {
                     showSuccessMessage();
                     setTimeout(() => {
                         authContainer.style.display = 'none';
-                        mainContent.style.display = 'grid';
+                        if (isAdmin) {
+                            adminBtn.style.display = 'block';
+                            mainContent.style.display = 'grid';
+                        } else {
+                            mainContent.style.display = 'grid';
+                        }
                     }, 2000);
                 })
                 .catch(error => {
@@ -951,6 +1532,7 @@
             loginBtn.addEventListener('click', function() {
                 authContainer.style.display = 'flex';
                 mainContent.style.display = 'none';
+                adminPanel.style.display = 'none';
                 
                 // Activate login tab
                 authTabs.forEach(t => t.classList.remove('active'));
@@ -964,6 +1546,7 @@
             registerBtn.addEventListener('click', function() {
                 authContainer.style.display = 'flex';
                 mainContent.style.display = 'none';
+                adminPanel.style.display = 'none';
                 
                 // Activate register tab
                 authTabs.forEach(t => t.classList.remove('active'));
@@ -971,6 +1554,15 @@
                 
                 authForms.forEach(form => form.classList.remove('active'));
                 document.getElementById('registerForm').classList.add('active');
+            });
+            
+            // Show admin panel
+            adminBtn.addEventListener('click', function() {
+                authContainer.style.display = 'none';
+                mainContent.style.display = 'none';
+                adminPanel.style.display = 'block';
+                initializeAdminPanel();
+                updateStats();
             });
             
             // Services modal
@@ -981,6 +1573,10 @@
             closeServicesModal.addEventListener('click', function() {
                 servicesModal.style.display = 'none';
                 resetServiceSelection();
+            });
+            
+            closeAdminModal.addEventListener('click', function() {
+                adminModal.style.display = 'none';
             });
             
             // Service selection
@@ -1036,7 +1632,26 @@
             logoutBtn.addEventListener('click', function() {
                 authContainer.style.display = 'flex';
                 mainContent.style.display = 'none';
+                adminPanel.style.display = 'none';
+                adminBtn.style.display = 'none';
                 resetServiceSelection();
+                isAdmin = false;
+                currentUser = null;
+            });
+            
+            // Add member button
+            document.getElementById('addMemberBtn').addEventListener('click', function() {
+                openEditModal('member');
+            });
+            
+            // Add event button
+            document.getElementById('addEventBtn').addEventListener('click', function() {
+                openEditModal('event');
+            });
+            
+            // Add item button
+            document.getElementById('addItemBtn').addEventListener('click', function() {
+                openEditModal('warehouse');
             });
             
             // Function to find admin by username and send message
