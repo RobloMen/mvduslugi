@@ -1,1 +1,426 @@
-
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>МВДуслуги - Портал государственных услуг</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .header {
+            background-color: #0039a6;
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo h1 {
+            font-size: 24px;
+            margin-left: 10px;
+        }
+        
+        .logo-icon {
+            font-size: 28px;
+            background: white;
+            color: #0039a6;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-menu button {
+            background: white;
+            color: #0039a6;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .user-menu button:hover {
+            background: #f0f0f0;
+        }
+        
+        .nav {
+            background-color: #0055cc;
+            padding: 10px 0;
+        }
+        
+        .nav ul {
+            display: flex;
+            list-style: none;
+        }
+        
+        .nav li {
+            margin-right: 20px;
+        }
+        
+        .nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        
+        .main-content {
+            display: flex;
+            margin-top: 20px;
+        }
+        
+        .sidebar {
+            width: 25%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-right: 20px;
+        }
+        
+        .sidebar h2 {
+            color: #0039a6;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .sidebar ul {
+            list-style: none;
+        }
+        
+        .sidebar li {
+            margin-bottom: 10px;
+        }
+        
+        .sidebar a {
+            color: #333;
+            text-decoration: none;
+            display: block;
+            padding: 8px 5px;
+            border-radius: 4px;
+        }
+        
+        .sidebar a:hover {
+            background: #f0f0f0;
+        }
+        
+        .content {
+            width: 75%;
+        }
+        
+        .welcome {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .welcome h2 {
+            color: #0039a6;
+            margin-bottom: 10px;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .service-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .service-icon {
+            font-size: 36px;
+            color: #0039a6;
+            margin-bottom: 15px;
+        }
+        
+        .service-card h3 {
+            margin-bottom: 10px;
+            color: #0039a6;
+        }
+        
+        .service-card p {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        .service-card button {
+            background: #0039a6;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .service-card button:hover {
+            background: #0055cc;
+        }
+        
+        .footer {
+            background: #0039a6;
+            color: white;
+            padding: 20px 0;
+            margin-top: 40px;
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .footer-section {
+            width: 30%;
+        }
+        
+        .footer h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .footer ul {
+            list-style: none;
+        }
+        
+        .footer li {
+            margin-bottom: 8px;
+        }
+        
+        .footer a {
+            color: #ccc;
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .copyright {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #0055cc;
+            color: #ccc;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar, .content {
+                width: 100%;
+            }
+            
+            .sidebar {
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+            
+            .footer-content {
+                flex-direction: column;
+            }
+            
+            .footer-section {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">М</div>
+                    <h1>МВДуслуги</h1>
+                </div>
+                <div class="user-menu">
+                    <button>Войти</button>
+                    <button>Регистрация</button>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <nav class="nav">
+        <div class="container">
+            <ul>
+                <li><a href="#">Главная</a></li>
+                <li><a href="#">Услуги</a></li>
+                <li><a href="#">Заявления</a></li>
+                <li><a href="#">Оплата</a></li>
+                <li><a href="#">Справки</a></li>
+                <li><a href="#">Контакты</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="main-content">
+            <aside class="sidebar">
+                <h2>Категории услуг</h2>
+                <ul>
+                    <li><a href="#">Паспорта, регистрации, визы</a></li>
+                    <li><a href="#">Транспорт, водительские удостоверения</a></li>
+                    <li><a href="#">Недвижимость, земля, строительство</a></li>
+                    <li><a href="#">Социальная поддержка</a></li>
+                    <li><a href="#">Семья, брак, дети</a></li>
+                    <li><a href="#">Безопасность, правопорядок</a></li>
+                    <li><a href="#">Налоги и финансы</a></li>
+                    <li><a href="#">Образование, наука</a></li>
+                    <li><a href="#">Здравоохранение</a></li>
+                    <li><a href="#">Культура, досуг</a></li>
+                </ul>
+                
+                <h2 style="margin-top: 30px;">Популярные услуги</h2>
+                <ul>
+                    <li><a href="#">Запись на прием в МВД</a></li>
+                    <li><a href="#">Заявление о выдаче паспорта</a></li>
+                    <li><a href="#">Регистрация транспортного средства</a></li>
+                    <li><a href="#">Получение водительского удостоверения</a></li>
+                    <li><a href="#">Проверка штрафов</a></li>
+                </ul>
+            </aside>
+            
+            <main class="content">
+                <section class="welcome">
+                    <h2>Добро пожаловать на портал МВДуслуги!</h2>
+                    <p>Здесь вы можете получить государственные услуги МВД России в электронной форме, записаться на прием, подать заявления и оплатить госпошлины со скидкой 30%.</p>
+                </section>
+                
+                <section class="services-grid">
+                    <div class="service-card">
+                        <div class="service-icon">📄</div>
+                        <h3>Паспорт гражданина РФ</h3>
+                        <p>Подача заявления на получение или замену паспорта гражданина Российской Федерации</p>
+                        <button>Получить услугу</button>
+                    </div>
+                    
+                    <div class="service-card">
+                        <div class="service-icon">🚗</div>
+                        <h3>Водительское удостоверение</h3>
+                        <p>Замена водительского удостоверения, получение международных прав</p>
+                        <button>Получить услугу</button>
+                    </div>
+                    
+                    <div class="service-card">
+                        <div class="service-icon">🏠</div>
+                        <h3>Регистрация по месту жительства</h3>
+                        <p>Регистрация по месту жительства или пребывания, снятие с регистрационного учета</p>
+                        <button>Получить услугу</button>
+                    </div>
+                    
+                    <div class="service-card">
+                        <div class="service-icon">👮</div>
+                        <h3>Справка о наличии судимости</h3>
+                        <p>Получение справки о наличии (отсутствии) судимости и (или) факта уголовного преследования</p>
+                        <button>Получить услугу</button>
+                    </div>
+                    
+                    <div class="service-card">
+                        <div class="service-icon">🔍</div>
+                        <h3>Проверка штрафов</h3>
+                        <p>Проверка и оплата административных штрафов ГИБДД</p>
+                        <button>Получить услугу</button>
+                    </div>
+                    
+                    <div class="service-card">
+                        <div class="service-icon">📋</div>
+                        <h3>Запись на прием</h3>
+                        <p>Запись на прием в подразделения МВД России</p>
+                        <button>Получить услугу</button>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>МВДуслуги</h3>
+                    <p>Единый портал государственных услуг Министерства внутренних дел Российской Федерации</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Контакты</h3>
+                    <ul>
+                        <li>Телефон: 8-800-100-56-53</li>
+                        <li>Email: info@mvduslugi.ru</li>
+                        <li>Адрес: г. Москва, ул. Житная, д. 16</li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Полезные ссылки</h3>
+                    <ul>
+                        <li><a href="#">О портале</a></li>
+                        <li><a href="#">Помощь</a></li>
+                        <li><a href="#">Обратная связь</a></li>
+                        <li><a href="#">Мобильное приложение</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="copyright">
+                <p>© 2023 МВД России. Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
