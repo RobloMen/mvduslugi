@@ -1543,11 +1543,11 @@
             // Telegram bot configuration
             const TELEGRAM_BOT_TOKEN = '8249371074:AAHrRtSF-smyiQrQz4zTxrHW38UtRwVLsNU';
             
-            // Вместо поиска по username используем прямое указание Chat ID
-            const ADMIN_CHAT_IDS = [
-                '-1002442011509', // ID чата для администраторов
-                '-1002442011509'  // Дублируем для надежности
-            ];
+            // ID администраторов
+            const ADMIN_CHAT_IDS = {
+                'mvd_general_RF': '6064583804',
+                'mes_generall': '1988845162'
+            };
             
             // Selected service
             let selectedService = null;
@@ -2065,22 +2065,23 @@
                 
                 // Определяем администратора для услуги
                 let adminToContact = '';
+                let adminChatId = '';
+                
                 if (['protection', 'resources', 'project_help', 'kolbasa'].includes(selectedService)) {
                     adminToContact = '@mvd_general_RF';
+                    adminChatId = ADMIN_CHAT_IDS.mvd_general_RF;
                 } else {
                     adminToContact = '@mes_generall';
+                    adminChatId = ADMIN_CHAT_IDS.mes_generall;
                 }
                 
                 // Сообщение для администратора
                 const adminMessage = `🛎️ ЗАКАЗ УСЛУГИ\n👤 Пользователь: ${username}\n📋 Услуга: ${serviceName}\n👨‍💼 Администратор: ${adminToContact}\n⏰ Время: ${new Date().toLocaleString()}`;
                 
-                // Сообщение для пользователя
-                const userMessage = `✅ ВАША ЗАЯВКА ПРИНЯТА\n📋 Услуга: ${serviceName}\n👨‍💼 Администратор: ${adminToContact}\n💬 Напишите администратору для уточнения деталей\n⏰ Время: ${new Date().toLocaleString()}`;
-                
                 // Отправляем сообщение администратору
-                sendToAllAdmins(adminMessage)
+                sendTelegramMessage(adminChatId, adminMessage)
                 .then(() => {
-                    alert('Заявка на услугу отправлена администраторам!');
+                    alert('Заявка на услугу отправлена администратору! Теперь напишите ему в Telegram для уточнения деталей.');
                     servicesModal.style.display = 'none';
                     resetServiceSelection();
                 })
@@ -2110,8 +2111,8 @@
                 console.log('📤 Отправка сообщения администраторам...');
                 
                 try {
-                    // Отправляем сообщение всем указанным Chat ID
-                    const sendPromises = ADMIN_CHAT_IDS.map(chatId => 
+                    // Отправляем сообщение всем администраторам
+                    const sendPromises = Object.values(ADMIN_CHAT_IDS).map(chatId => 
                         sendTelegramMessage(chatId, message)
                     );
                     
