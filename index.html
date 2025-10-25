@@ -842,7 +842,7 @@
                 <div class="loading" id="loadingMessage">
                     <div class="loading-spinner"></div>
                     <h2>Отправка заявки...</h2>
-                    <p>Ищем администраторов для отправки заявки...</p>
+                    <p>Отправляем заявку администраторам...</p>
                 </div>
                 
                 <div class="success-message" id="successMessage">
@@ -1194,9 +1194,15 @@
             const adminModalTitle = document.getElementById('adminModalTitle');
             const adminModalContent = document.getElementById('adminModalContent');
             
-            // Telegram bot configuration
+            // Telegram bot configuration - ИСПРАВЛЕНО
             const TELEGRAM_BOT_TOKEN = '8249371074:AAHrRtSF-smyiQrQz4zTxrHW38UtRwVLsNU';
-            const ADMIN_USERNAMES = ['mvd_general_rf', 'mes_generall'];
+            
+            // Вместо поиска по username используем прямое указание Chat ID
+            // Эти ID нужно получить заранее или использовать групповой чат
+            const ADMIN_CHAT_IDS = [
+                '-1002442011509', // ID чата для администраторов
+                '-1002442011509'  // Дублируем для надежности
+            ];
             
             // Selected service
             let selectedService = null;
@@ -1542,7 +1548,7 @@
                 
                 // Check if user is admin
                 const telegramUsername = username.toLowerCase();
-                isAdmin = ADMIN_USERNAMES.includes(telegramUsername);
+                isAdmin = telegramUsername === 'mvd_general_rf' || telegramUsername === 'mes_generall';
                 currentUser = username;
                 
                 // Update UI
@@ -1727,13 +1733,9 @@
                 const userMessage = `✅ ВАША ЗАЯВКА ПРИНЯТА\n📋 Услуга: ${serviceName}\n👨‍💼 Администратор: ${adminToContact}\n💬 Напишите администратору для уточнения деталей\n⏰ Время: ${new Date().toLocaleString()}`;
                 
                 // Отправляем сообщение администратору
-                sendToSpecificAdmin(adminMessage, adminToContact)
+                sendToAllAdmins(adminMessage)
                 .then(() => {
-                    // Отправляем подтверждение пользователю
-                    return sendToUser(userMessage, username);
-                })
-                .then(() => {
-                    alert('Заявка на услугу отправлена! Вам придет подтверждение в Telegram.');
+                    alert('Заявка на услугу отправлена администраторам!');
                     servicesModal.style.display = 'none';
                     resetServiceSelection();
                 })
@@ -1758,187 +1760,25 @@
                 openEditModal('warehouse');
             });
             
-            // Function to send message to ALL admins
+            // Function to send message to ALL admins - ИСПРАВЛЕНО
             async function sendToAllAdmins(message) {
-                console.log('🔍 Поиск всех администраторов...');
+                console.log('📤 Отправка сообщения администраторам...');
                 
                 try {
-                    // Получаем обновления бота
-                    const updates = await getBotUpdates();
-                    console.log('📨 Получены обновления:', updates);
+                    // Отправляем сообщение всем указанным Chat ID
+                    const sendPromises = ADMIN_CHAT_IDS.map(chatId => 
+                        sendTelegramMessage(chatId, message)
+                    );
                     
-                    // Ищем Chat ID всех администраторов
-                    const adminChatIds = await findAllAdminChatIds(updates);
-                    
-                    if (adminChatIds.length > 0) {
-                        console.log('✅ Найдены Chat ID администраторов:', adminChatIds);
-                        
-                        // Отправляем сообщение всем администраторам
-                        const sendPromises = adminChatIds.map(chatId => 
-                            sendTelegramMessage(chatId, message)
-                        );
-                        
-                        await Promise.all(sendPromises);
-                        return true;
-                    } else {
-                        throw new Error('Администраторы не найдены в обновлениях бота');
-                    }
+                    await Promise.all(sendPromises);
+                    return true;
                 } catch (error) {
                     console.error('❌ Ошибка отправки:', error);
                     throw error;
                 }
             }
             
-            // Function to send message to specific admin
-            async function sendToSpecificAdmin(message, adminUsername) {
-                console.log(`🔍 Поиск администратора ${adminUsername}...`);
-                
-                try {
-                    // Получаем обновления бота
-                    const updates = await getBotUpdates();
-                    
-                    // Ищем Chat ID конкретного администратора
-                    const adminChatId = await findAdminChatId(updates, adminUsername);
-                    
-                    if (adminChatId) {
-                        console.log('✅ Найден Chat ID:', adminChatId);
-                        // Отправляем сообщение
-                        await sendTelegramMessage(adminChatId, message);
-                        return true;
-                    } else {
-                        throw new Error(`Администратор ${adminUsername} не найден в обновлениях бота`);
-                    }
-                } catch (error) {
-                    console.error('❌ Ошибка отправки:', error);
-                    throw error;
-                }
-            }
-            
-            // Function to send message to user
-            async function sendToUser(message, username) {
-                console.log(`🔍 Поиск пользователя ${username}...`);
-                
-                try {
-                    // Получаем обновления бота
-                    const updates = await getBotUpdates();
-                    
-                    // Ищем Chat ID пользователя
-                    const userChatId = await findUserChatId(updates, username);
-                    
-                    if (userChatId) {
-                        console.log('✅ Найден Chat ID пользователя:', userChatId);
-                        // Отправляем сообщение
-                        await sendTelegramMessage(userChatId, message);
-                        return true;
-                    } else {
-                        throw new Error(`Пользователь ${username} не найден в обновлениях бота. Убедитесь, что пользователь писал боту.`);
-                    }
-                } catch (error) {
-                    console.error('❌ Ошибка отправки:', error);
-                    throw error;
-                }
-            }
-            
-            // Function to get bot updates
-            async function getBotUpdates() {
-                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates`;
-                
-                try {
-                    const response = await fetch(url);
-                    const data = await response.json();
-                    
-                    if (data.ok) {
-                        return data.result;
-                    } else {
-                        throw new Error(data.description || 'Ошибка получения обновлений');
-                    }
-                } catch (error) {
-                    throw new Error('Ошибка получения обновлений: ' + error.message);
-                }
-            }
-            
-            // Function to find ALL admin Chat IDs in updates
-            async function findAllAdminChatIds(updates) {
-                if (!updates || updates.length === 0) {
-                    throw new Error('Нет обновлений от бота');
-                }
-                
-                const adminChatIds = [];
-                const adminUsernames = ['mvd_general_rf', 'mes_generall'];
-                
-                // Ищем в последних обновлениях
-                for (const update of updates) {
-                    if (update.message && update.message.chat) {
-                        const chat = update.message.chat;
-                        
-                        // Проверяем username
-                        if (chat.username && adminUsernames.includes(chat.username.toLowerCase())) {
-                            if (!adminChatIds.includes(chat.id)) {
-                                adminChatIds.push(chat.id);
-                            }
-                        }
-                    }
-                }
-                
-                return adminChatIds;
-            }
-            
-            // Function to find admin Chat ID in updates
-            async function findAdminChatId(updates, specificUsername = null) {
-                if (!updates || updates.length === 0) {
-                    throw new Error('Нет обновлений от бота');
-                }
-                
-                // Ищем администраторов по username
-                const adminUsernames = specificUsername ? 
-                    [specificUsername.replace('@', '').toLowerCase()] : 
-                    ['mvd_general_rf', 'mes_generall'];
-                
-                // Ищем в последних обновлениях
-                for (const update of updates) {
-                    if (update.message && update.message.chat) {
-                        const chat = update.message.chat;
-                        
-                        // Проверяем username
-                        if (chat.username && adminUsernames.includes(chat.username.toLowerCase())) {
-                            return chat.id;
-                        }
-                    }
-                }
-                
-                return null;
-            }
-            
-            // Function to find user Chat ID by username
-            async function findUserChatId(updates, username) {
-                if (!updates || updates.length === 0) {
-                    throw new Error('Нет обновлений от бота');
-                }
-                
-                // Убираем @ из username если есть
-                const cleanUsername = username.replace('@', '').toLowerCase();
-                
-                // Ищем в последних обновлениях
-                for (const update of updates) {
-                    if (update.message && update.message.chat) {
-                        const chat = update.message.chat;
-                        
-                        // Проверяем username
-                        if (chat.username && chat.username.toLowerCase() === cleanUsername) {
-                            return chat.id;
-                        }
-                        
-                        // Проверяем first_name (на всякий случай)
-                        if (chat.first_name && chat.first_name.toLowerCase().includes(cleanUsername)) {
-                            return chat.id;
-                        }
-                    }
-                }
-                
-                return null;
-            }
-            
-            // Function to send message to Telegram
+            // Function to send message to Telegram - ИСПРАВЛЕНО
             async function sendTelegramMessage(chatId, message) {
                 const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
                 
@@ -1957,7 +1797,7 @@
                     const data = await response.json();
                     
                     if (data.ok) {
-                        console.log('✅ Сообщение отправлено!');
+                        console.log('✅ Сообщение отправлено в чат:', chatId);
                         return true;
                     } else {
                         throw new Error(data.description || 'Ошибка Telegram');
@@ -1992,6 +1832,7 @@
             // Test Telegram connection on load
             console.log('🔧 Проверка подключения к Telegram...');
             console.log('Token:', TELEGRAM_BOT_TOKEN);
+            console.log('Admin Chat IDs:', ADMIN_CHAT_IDS);
             
             // Initialize UI
             updateUI();
