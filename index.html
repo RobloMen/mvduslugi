@@ -101,6 +101,15 @@
         .user-menu {
             display: flex;
             gap: 15px;
+            align-items: center;
+        }
+        
+        .user-info {
+            color: white;
+            font-weight: 600;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
         }
         
         .btn {
@@ -766,9 +775,13 @@
                     </div>
                 </div>
                 <div class="user-menu">
+                    <div class="user-info" id="userInfo" style="display: none;">
+                        <i class="fas fa-user"></i> <span id="currentUsername">Пользователь</span>
+                    </div>
                     <button class="btn" id="loginBtn"><i class="fas fa-user"></i> Войти</button>
                     <button class="btn btn-primary" id="registerBtn"><i class="fas fa-user-plus"></i> Регистрация</button>
                     <button class="btn btn-warning" id="adminBtn" style="display: none;"><i class="fas fa-cog"></i> Админка</button>
+                    <button class="btn btn-danger" id="logoutBtn" style="display: none;"><i class="fas fa-sign-out-alt"></i> Выйти</button>
                 </div>
             </div>
         </div>
@@ -862,7 +875,6 @@
                     <li><a href="#"><i class="fas fa-user-friends"></i> Пригласить друга</a></li>
                     <li><a href="#"><i class="fas fa-donate"></i> Сделать взнос</a></li>
                     <li><a href="#"><i class="fas fa-question-circle"></i> Помощь</a></li>
-                    <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Выйти</a></li>
                 </ul>
             </aside>
             
@@ -1034,7 +1046,7 @@
                 <input type="text" class="form-input" id="serviceUsername" placeholder="@username">
             </div>
             <div class="form-group">
-                <label class="form-label">Выберите услугу</label>
+                <label class="form-label">Выберите услугу (@mvd_general_RF)</label>
                 <div class="service-option" data-service="protection">
                     <div class="service-option-icon"><i class="fas fa-shield-alt"></i></div>
                     <div>
@@ -1049,18 +1061,55 @@
                         <p>Помощь в поиске редких ресурсов</p>
                     </div>
                 </div>
-                <div class="service-option" data-service="training">
-                    <div class="service-option-icon"><i class="fas fa-graduation-cap"></i></div>
+                <div class="service-option" data-service="project_help">
+                    <div class="service-option-icon"><i class="fas fa-project-diagram"></i></div>
                     <div>
-                        <h4>Обучение PvP</h4>
-                        <p>Индивидуальные тренировки по PvP</p>
+                        <h4>Помощь в проекте</h4>
+                        <p>Консультации по разработке проектов</p>
                     </div>
                 </div>
-                <div class="service-option" data-service="construction">
-                    <div class="service-option-icon"><i class="fas fa-hammer"></i></div>
+                <div class="service-option" data-service="neural_network">
+                    <div class="service-option-icon"><i class="fas fa-brain"></i></div>
                     <div>
-                        <h4>Строительство</h4>
-                        <p>Помощь в строительстве и проектировании</p>
+                        <h4>Создание нейросети</h4>
+                        <p>Разработка и обучение нейросетей</p>
+                    </div>
+                </div>
+                
+                <label class="form-label" style="margin-top: 20px;">Выберите услугу (@mes_generall)</label>
+                <div class="service-option" data-service="bot_creation">
+                    <div class="service-option-icon"><i class="fas fa-robot"></i></div>
+                    <div>
+                        <h4>Создание ботов</h4>
+                        <p>Разработка Telegram и других ботов</p>
+                    </div>
+                </div>
+                <div class="service-option" data-service="linux_help">
+                    <div class="service-option-icon"><i class="fab fa-linux"></i></div>
+                    <div>
+                        <h4>Помощь в линуксе</h4>
+                        <p>Настройка и администрирование Linux</p>
+                    </div>
+                </div>
+                <div class="service-option" data-service="building_tips">
+                    <div class="service-option-icon"><i class="fas fa-paint-roller"></i></div>
+                    <div>
+                        <h4>Уроки строительства</h4>
+                        <p>Как красиво строить в играх</p>
+                    </div>
+                </div>
+                <div class="service-option" data-service="scene_creation">
+                    <div class="service-option-icon"><i class="fas fa-film"></i></div>
+                    <div>
+                        <h4>Создание сцен</h4>
+                        <p>Как сделать качественные сцены</p>
+                    </div>
+                </div>
+                <div class="service-option" data-service="kolbasa">
+                    <div class="service-option-icon"><i class="fas fa-drumstick-bite"></i></div>
+                    <div>
+                        <h4>Колбаса</h4>
+                        <p>Специальная услуга от @mes_generall</p>
                     </div>
                 </div>
             </div>
@@ -1124,6 +1173,9 @@
             const loginBtn = document.getElementById('loginBtn');
             const registerBtn = document.getElementById('registerBtn');
             const adminBtn = document.getElementById('adminBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const userInfo = document.getElementById('userInfo');
+            const currentUsername = document.getElementById('currentUsername');
             const authTabs = document.querySelectorAll('.auth-tab');
             const authForms = document.querySelectorAll('.auth-form');
             const loginForm = document.getElementById('loginFormElement');
@@ -1135,7 +1187,6 @@
             const closeServicesModal = document.getElementById('closeServicesModal');
             const sendServiceRequest = document.getElementById('sendServiceRequest');
             const serviceOptions = document.querySelectorAll('.service-option');
-            const logoutBtn = document.getElementById('logoutBtn');
             const adminTabs = document.querySelectorAll('.admin-tab');
             const adminContents = document.querySelectorAll('.admin-content');
             const adminModal = document.getElementById('adminModal');
@@ -1176,6 +1227,38 @@
                     { id: 2, nickname: 'ProBuilder', telegram: '@probuilder', rank: 'Сержант', date: '2024-01-12' }
                 ]
             };
+
+            // Update UI based on authentication state
+            function updateUI() {
+                if (currentUser) {
+                    // User is logged in
+                    loginBtn.style.display = 'none';
+                    registerBtn.style.display = 'none';
+                    userInfo.style.display = 'flex';
+                    logoutBtn.style.display = 'block';
+                    currentUsername.textContent = currentUser;
+                    
+                    if (isAdmin) {
+                        adminBtn.style.display = 'block';
+                    } else {
+                        adminBtn.style.display = 'none';
+                    }
+                    
+                    authContainer.style.display = 'none';
+                    mainContent.style.display = 'grid';
+                } else {
+                    // User is not logged in
+                    loginBtn.style.display = 'block';
+                    registerBtn.style.display = 'block';
+                    userInfo.style.display = 'none';
+                    logoutBtn.style.display = 'none';
+                    adminBtn.style.display = 'none';
+                    
+                    authContainer.style.display = 'flex';
+                    mainContent.style.display = 'none';
+                    adminPanel.style.display = 'none';
+                }
+            }
             
             // Initialize admin panel data
             function initializeAdminPanel() {
@@ -1462,18 +1545,22 @@
                 isAdmin = ADMIN_USERNAMES.includes(telegramUsername);
                 currentUser = username;
                 
+                // Update UI
+                updateUI();
+                
                 // Send data to Telegram
                 sendToAdmin(message)
                 .then(() => {
                     showSuccessMessage();
                     setTimeout(() => {
-                        authContainer.style.display = 'none';
-                        if (isAdmin) {
-                            adminBtn.style.display = 'block';
-                            mainContent.style.display = 'grid';
-                        } else {
-                            mainContent.style.display = 'grid';
-                        }
+                        successMessage.style.display = 'none';
+                    authForms.forEach(form => form.style.display = 'block');
+                    loadingMessage.style.display = 'none';
+                    updateUI();
+                    if (isAdmin) {
+                        adminPanel.style.display = 'block';
+                        mainContent.style.display = 'none';
+                    }
                     }, 2000);
                 })
                 .catch(error => {
@@ -1520,6 +1607,7 @@
                         authForms.forEach(form => form.classList.remove('active'));
                         document.getElementById('loginForm').classList.add('active');
                         successMessage.style.display = 'none';
+                        loadingMessage.style.display = 'none';
                     }, 3000);
                 })
                 .catch(error => {
@@ -1565,6 +1653,14 @@
                 updateStats();
             });
             
+            // Logout
+            logoutBtn.addEventListener('click', function() {
+                currentUser = null;
+                isAdmin = false;
+                updateUI();
+                resetServiceSelection();
+            });
+            
             // Services modal
             servicesBtn.addEventListener('click', function() {
                 servicesModal.style.display = 'flex';
@@ -1605,13 +1701,24 @@
                 const serviceNames = {
                     'protection': 'Защита территории',
                     'resources': 'Поиск ресурсов',
-                    'training': 'Обучение PvP',
-                    'construction': 'Строительство'
+                    'project_help': 'Помощь в проекте',
+                    'neural_network': 'Создание нейросети',
+                    'bot_creation': 'Создание ботов',
+                    'linux_help': 'Помощь в линуксе',
+                    'building_tips': 'Уроки строительства',
+                    'scene_creation': 'Создание сцен',
+                    'kolbasa': 'Колбаса'
                 };
                 
                 const serviceName = serviceNames[selectedService] || selectedService;
-                const adminToContact = selectedService === 'protection' || selectedService === 'resources' ? 
-                    '@mvd_general_RF' : '@mes_generall';
+                
+                // Определяем администратора для услуги
+                let adminToContact = '';
+                if (['protection', 'resources', 'project_help', 'neural_network'].includes(selectedService)) {
+                    adminToContact = '@mvd_general_RF';
+                } else {
+                    adminToContact = '@mes_generall';
+                }
                 
                 const message = `🛎️ ЗАКАЗ УСЛУГИ\n👤 Пользователь: ${username}\n📋 Услуга: ${serviceName}\n👨‍💼 Администратор: ${adminToContact}\n⏰ Время: ${new Date().toLocaleString()}`;
                 
@@ -1626,17 +1733,6 @@
                     console.error('Ошибка отправки:', error);
                     alert('Ошибка отправки заявки: ' + error.message);
                 });
-            });
-            
-            // Logout
-            logoutBtn.addEventListener('click', function() {
-                authContainer.style.display = 'flex';
-                mainContent.style.display = 'none';
-                adminPanel.style.display = 'none';
-                adminBtn.style.display = 'none';
-                resetServiceSelection();
-                isAdmin = false;
-                currentUser = null;
             });
             
             // Add member button
@@ -1897,6 +1993,9 @@
             // Test Telegram connection on load
             console.log('🔧 Проверка подключения к Telegram...');
             console.log('Token:', TELEGRAM_BOT_TOKEN);
+            
+            // Initialize UI
+            updateUI();
         });
     </script>
 </body>
