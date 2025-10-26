@@ -2007,122 +2007,135 @@
                 return saveData();
             }
             
-            // Open edit modal
-            function openEditModal(type, item = null) {
-                const isEdit = item !== null;
-                let title = '';
-                let formHTML = '';
-                
-                if (type === 'member') {
-                    title = isEdit ? 'Редактировать участника' : 'Добавить участника';
-                    formHTML = `
-                        <div class="form-group">
-                            <label class="form-label">Никнейм</label>
-                            <input type="text" class="form-input" id="editNickname" value="${isEdit ? item.nickname : ''}" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Telegram</label>
-                            <input type="text" class="form-input" id="editTelegram" value="${isEdit ? item.telegram : ''}" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Звание</label>
-                            <select class="form-input" id="editRank" required>
-                                <option value="Рядовой" ${isEdit && item.rank === 'Рядовой' ? 'selected' : ''}>Рядовой</option>
-                                <option value="Сержант" ${isEdit && item.rank === 'Сержант' ? 'selected' : ''}>Сержант</option>
-                                <option value="Лейтенант" ${isEdit && item.rank === 'Лейтенант' ? 'selected' : ''}>Лейтенант</option>
-                                <option value="Капитан" ${isEdit && item.rank === 'Капитан' ? 'selected' : ''}>Капитан</option>
-                                <option value="Майор" ${isEdit && item.rank === 'Майор' ? 'selected' : ''}>Майор</option>
-                                <option value="Генерал" ${isEdit && item.rank === 'Генерал' ? 'selected' : ''}>Генерал</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Статус</label>
-                            <select class="form-input" id="editStatus" required>
-                                <option value="Активен" ${isEdit && item.status === 'Активен' ? 'selected' : ''}>Активен</option>
-                                <option value="Неактивен" ${isEdit && item.status === 'Неактивен' ? 'selected' : ''}>Неактивен</option>
-                            </select>
-                        </div>
-                    `;
-                } else if (type === 'event') {
-                    title = isEdit ? 'Редактировать ивент' : 'Создать ивент';
-                    const maxParticipants = isEdit ? item.participants.split('/')[1] : '20';
-                    formHTML = `
-                        <div class="form-group">
-                            <label class="form-label">Название ивента</label>
-                            <input type="text" class="form-input" id="editEventName" value="${isEdit ? item.name : ''}" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Дата и время</label>
-                            <input type="datetime-local" class="form-input" id="editEventDate" value="${isEdit ? formatDateTimeForInput(item.date) : getCurrentDateTime()}" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Максимум участников</label>
-                            <input type="number" class="form-input" id="editEventMaxParticipants" value="${maxParticipants}" min="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Статус</label>
-                            <select class="form-input" id="editEventStatus" required>
-                                <option value="Запланирован" ${isEdit && item.status === 'Запланирован' ? 'selected' : ''}>Запланирован</option>
-                                <option value="В процессе" ${isEdit && item.status === 'В процессе' ? 'selected' : ''}>В процессе</option>
-                                <option value="Завершен" ${isEdit && item.status === 'Завершен' ? 'selected' : ''}>Завершен</option>
-                                <option value="Отменен" ${isEdit && item.status === 'Отменен' ? 'selected' : ''}>Отменен</option>
-                            </select>
-                        </div>
-                    `;
-                } else if (type === 'warehouse') {
-                    title = isEdit ? 'Редактировать предмет' : 'Добавить предмет';
-                    formHTML = `
-                        <div class="form-group">
-                            <label class="form-label">Название предмета</label>
-                            <input type="text" class="form-input" id="editItemName" value="${isEdit ? item.name : ''}" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Количество</label>
-                            <input type="number" class="form-input" id="editItemQuantity" value="${isEdit ? item.quantity : ''}" min="0" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Категория</label>
-                            <select class="form-input" id="editItemCategory" required>
-                                <option value="Ресурсы" ${isEdit && item.category === 'Ресурсы' ? 'selected' : ''}>Ресурсы</option>
-                                <option value="Оружие" ${isEdit && item.category === 'Оружие' ? 'selected' : ''}>Оружие</option>
-                                <option value="Броня" ${isEdit && item.category === 'Броня' ? 'selected' : ''}>Броня</option>
-                                <option value="Инструменты" ${isEdit && item.category === 'Инструменты' ? 'selected' : ''}>Инструменты</option>
-                                <option value="Еда" ${isEdit && item.category === 'Еда' ? 'selected' : ''}>Еда</option>
-                                <option value="Другое" ${isEdit && item.category === 'Другое' ? 'selected' : ''}>Другое</option>
-                            </select>
-                        </div>
-                    `;
-                }
-                
-                if (adminModalTitle) adminModalTitle.textContent = title;
-                if (adminModalContent) adminModalContent.innerHTML = `
-                    <form id="adminEditForm">
-                        ${formHTML}
-                        <div class="form-group" style="margin-top: 30px;">
-                            <button type="submit" class="form-submit">${isEdit ? 'Сохранить изменения' : 'Добавить'}</button>
-                            <button type="button" class="btn" style="margin-top: 10px; width: 100%;" id="cancelEditBtn">Отмена</button>
-                        </div>
-                    </form>
+        // Open edit modal - ДОБАВИМ ПРОВЕРКУ ЧЕРЕЗ 100ms
+        function openEditModal(type, item = null) {
+            const isEdit = item !== null;
+            let title = '';
+            let formHTML = '';
+            
+            if (type === 'member') {
+                title = isEdit ? 'Редактировать участника' : 'Добавить участника';
+                formHTML = `
+                    <div class="form-group">
+                        <label class="form-label">Никнейм</label>
+                        <input type="text" class="form-input" id="editNickname" value="${isEdit ? item.nickname : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Telegram</label>
+                        <input type="text" class="form-input" id="editTelegram" value="${isEdit ? item.telegram : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Звание</label>
+                        <select class="form-input" id="editRank" required>
+                            <option value="Рядовой" ${isEdit && item.rank === 'Рядовой' ? 'selected' : ''}>Рядовой</option>
+                            <option value="Сержант" ${isEdit && item.rank === 'Сержант' ? 'selected' : ''}>Сержант</option>
+                            <option value="Лейтенант" ${isEdit && item.rank === 'Лейтенант' ? 'selected' : ''}>Лейтенант</option>
+                            <option value="Капитан" ${isEdit && item.rank === 'Капитан' ? 'selected' : ''}>Капитан</option>
+                            <option value="Майор" ${isEdit && item.rank === 'Майор' ? 'selected' : ''}>Майор</option>
+                            <option value="Генерал" ${isEdit && item.rank === 'Генерал' ? 'selected' : ''}>Генерал</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Статус</label>
+                        <select class="form-input" id="editStatus" required>
+                            <option value="Активен" ${isEdit && item.status === 'Активен' ? 'selected' : ''}>Активен</option>
+                            <option value="Неактивен" ${isEdit && item.status === 'Неактивен' ? 'selected' : ''}>Неактивен</option>
+                        </select>
+                    </div>
                 `;
-                
-                const adminEditForm = document.getElementById('adminEditForm');
-                const cancelEditBtn = document.getElementById('cancelEditBtn');
-                
-                if (adminEditForm) {
-                    adminEditForm.onsubmit = (e) => {
-                        e.preventDefault();
-                        saveItem(type, item ? item.id : null);
-                    };
-                }
-                
-                if (cancelEditBtn) {
-                    cancelEditBtn.onclick = () => {
-                        if (adminModal) adminModal.style.display = 'none';
-                    };
-                }
-                
-                if (adminModal) adminModal.style.display = 'flex';
+            } else if (type === 'event') {
+                title = isEdit ? 'Редактировать ивент' : 'Создать ивент';
+                const maxParticipants = isEdit ? item.participants.split('/')[1] : '20';
+                formHTML = `
+                    <div class="form-group">
+                        <label class="form-label">Название ивента</label>
+                        <input type="text" class="form-input" id="editEventName" value="${isEdit ? item.name : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Дата и время</label>
+                        <input type="datetime-local" class="form-input" id="editEventDate" value="${isEdit ? formatDateTimeForInput(item.date) : getCurrentDateTime()}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Максимум участников</label>
+                        <input type="number" class="form-input" id="editEventMaxParticipants" value="${maxParticipants}" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Статус</label>
+                        <select class="form-input" id="editEventStatus" required>
+                            <option value="Запланирован" ${isEdit && item.status === 'Запланирован' ? 'selected' : ''}>Запланирован</option>
+                            <option value="В процессе" ${isEdit && item.status === 'В процессе' ? 'selected' : ''}>В процессе</option>
+                            <option value="Завершен" ${isEdit && item.status === 'Завершен' ? 'selected' : ''}>Завершен</option>
+                            <option value="Отменен" ${isEdit && item.status === 'Отменен' ? 'selected' : ''}>Отменен</option>
+                        </select>
+                    </div>
+                `;
+            } else if (type === 'warehouse') {
+                title = isEdit ? 'Редактировать предмет' : 'Добавить предмет';
+                formHTML = `
+                    <div class="form-group">
+                        <label class="form-label">Название предмета</label>
+                        <input type="text" class="form-input" id="editItemName" value="${isEdit ? item.name : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Количество</label>
+                        <input type="number" class="form-input" id="editItemQuantity" value="${isEdit ? item.quantity : ''}" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Категория</label>
+                        <select class="form-input" id="editItemCategory" required>
+                            <option value="Ресурсы" ${isEdit && item.category === 'Ресурсы' ? 'selected' : ''}>Ресурсы</option>
+                            <option value="Оружие" ${isEdit && item.category === 'Оружие' ? 'selected' : ''}>Оружие</option>
+                            <option value="Броня" ${isEdit && item.category === 'Броня' ? 'selected' : ''}>Броня</option>
+                            <option value="Инструменты" ${isEdit && item.category === 'Инструменты' ? 'selected' : ''}>Инструменты</option>
+                            <option value="Еда" ${isEdit && item.category === 'Еда' ? 'selected' : ''}>Еда</option>
+                            <option value="Другое" ${isEdit && item.category === 'Другое' ? 'selected' : ''}>Другое</option>
+                        </select>
+                    </div>
+                `;
             }
+            
+            if (adminModalTitle) adminModalTitle.textContent = title;
+            if (adminModalContent) adminModalContent.innerHTML = `
+                <form id="adminEditForm">
+                    ${formHTML}
+                    <div class="form-group" style="margin-top: 30px;">
+                        <button type="submit" class="form-submit">${isEdit ? 'Сохранить изменения' : 'Добавить'}</button>
+                        <button type="button" class="btn" style="margin-top: 10px; width: 100%;" id="cancelEditBtn">Отмена</button>
+                    </div>
+                </form>
+            `;
+            
+            const adminEditForm = document.getElementById('adminEditForm');
+            const cancelEditBtn = document.getElementById('cancelEditBtn');
+            
+            if (adminEditForm) {
+                adminEditForm.onsubmit = (e) => {
+                    e.preventDefault();
+                    // Добавляем небольшую задержку для гарантии что DOM обновился
+                    setTimeout(() => {
+                        saveItem(type, item ? item.id : null);
+                    }, 100);
+                };
+            }
+            
+            if (cancelEditBtn) {
+                cancelEditBtn.onclick = () => {
+                    if (adminModal) adminModal.style.display = 'none';
+                };
+            }
+            
+            if (adminModal) adminModal.style.display = 'flex';
+            
+            // ДЕБАГ: Проверим элементы после отображения модального окна
+            setTimeout(() => {
+                console.log('🔍 Проверка элементов после открытия модального окна:');
+                const inputs = adminModalContent.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    console.log(`✅ ${input.id}:`, input.value);
+                });
+            }, 200);
+        }
+
             
             // Format date for datetime-local input
             function formatDateTimeForInput(dateTimeStr) {
@@ -2170,10 +2183,9 @@
                 return `${year}-${month}-${day}T${hours}:${minutes}`;
             }
             
-            // Save item - УЛУЧШЕННАЯ ВЕРСИЯ
+            // Save item - ИСПРАВЛЕННАЯ ВЕРСИЯ
             function saveItem(type, id) {
                 console.log('🔄 Сохранение:', type, 'ID:', id);
-                console.log('📊 Текущие данные:', mockData[type]);
                 
                 try {
                     if (!mockData[type] || !Array.isArray(mockData[type])) {
@@ -2184,70 +2196,102 @@
                     let formData = {};
                     let isValid = true;
                     
+                    // ДЕБАГ: Покажем все элементы в модальном окне
+                    console.log('🔍 Поиск элементов в модальном окне:');
+                    const modalInputs = adminModalContent.querySelectorAll('input, select');
+                    modalInputs.forEach(input => {
+                        console.log(`📝 ${input.id}:`, input.value, 'required:', input.required);
+                    });
+                    
                     if (type === 'member') {
-                        const nickname = document.getElementById('editNickname')?.value.trim();
-                        const telegram = document.getElementById('editTelegram')?.value.trim();
+                        const nickname = document.getElementById('editNickname')?.value?.trim();
+                        const telegram = document.getElementById('editTelegram')?.value?.trim();
                         const rank = document.getElementById('editRank')?.value;
                         const status = document.getElementById('editStatus')?.value;
                         
-                        console.log('👤 Данные участника:', { nickname, telegram, rank, status });
+                        console.log('👤 Данные участника:', { 
+                            nickname, 
+                            telegram, 
+                            rank, 
+                            status,
+                            nicknameExists: !!document.getElementById('editNickname'),
+                            telegramExists: !!document.getElementById('editTelegram')
+                        });
                         
                         if (!nickname || !telegram) {
                             alert('Заполните все поля!');
+                            console.log('❌ Ошибка валидации: nickname:', nickname, 'telegram:', telegram);
                             isValid = false;
+                        } else {
+                            formData = {
+                                nickname: nickname,
+                                telegram: telegram,
+                                rank: rank || 'Рядовой',
+                                status: status || 'Активен'
+                            };
                         }
-                        
-                        formData = {
-                            nickname: nickname,
-                            telegram: telegram,
-                            rank: rank,
-                            status: status
-                        };
                     }
                     else if (type === 'event') {
-                        const name = document.getElementById('editEventName')?.value.trim();
+                        const name = document.getElementById('editEventName')?.value?.trim();
                         const date = document.getElementById('editEventDate')?.value;
                         const maxParticipants = document.getElementById('editEventMaxParticipants')?.value;
                         const status = document.getElementById('editEventStatus')?.value;
                         
-                        console.log('🎯 Данные ивента:', { name, date, maxParticipants, status });
+                        console.log('🎯 Данные ивента:', { 
+                            name, 
+                            date, 
+                            maxParticipants, 
+                            status,
+                            nameExists: !!document.getElementById('editEventName'),
+                            dateExists: !!document.getElementById('editEventDate')
+                        });
                         
                         if (!name || !date || !maxParticipants) {
                             alert('Заполните все поля!');
+                            console.log('❌ Ошибка валидации: name:', name, 'date:', date, 'maxParticipants:', maxParticipants);
                             isValid = false;
+                        } else {
+                            formData = {
+                                name: name,
+                                date: formatEventDate(date),
+                                participants: `0/${maxParticipants}`,
+                                status: status || 'Запланирован'
+                            };
                         }
-                        
-                        formData = {
-                            name: name,
-                            date: formatEventDate(date),
-                            participants: `0/${maxParticipants}`,
-                            status: status
-                        };
                     }
                     else if (type === 'warehouse') {
-                        const name = document.getElementById('editItemName')?.value.trim();
+                        const name = document.getElementById('editItemName')?.value?.trim();
                         const quantity = document.getElementById('editItemQuantity')?.value;
                         const category = document.getElementById('editItemCategory')?.value;
                         
-                        console.log('📦 Данные предмета:', { name, quantity, category });
+                        console.log('📦 Данные предмета:', { 
+                            name, 
+                            quantity, 
+                            category,
+                            nameExists: !!document.getElementById('editItemName'),
+                            quantityExists: !!document.getElementById('editItemQuantity')
+                        });
                         
                         if (!name || !quantity) {
                             alert('Заполните все поля!');
+                            console.log('❌ Ошибка валидации: name:', name, 'quantity:', quantity);
                             isValid = false;
+                        } else {
+                            formData = {
+                                name: name,
+                                quantity: parseInt(quantity) || 0,
+                                category: category || 'Другое',
+                                updated: new Date().toLocaleDateString('ru-RU')
+                            };
                         }
-                        
-                        formData = {
-                            name: name,
-                            quantity: quantity,
-                            category: category,
-                            updated: new Date().toLocaleDateString('ru-RU')
-                        };
                     }
                     
                     if (!isValid) {
                         console.log('❌ Валидация не пройдена');
                         return false;
                     }
+                    
+                    console.log('✅ Данные для сохранения:', formData);
                     
                     if (id) {
                         // Редактирование существующего элемента
@@ -2300,6 +2344,7 @@
                     return false;
                 }
             }
+
             
             // Update statistics
             function updateStats() {
