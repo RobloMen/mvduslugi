@@ -2468,12 +2468,19 @@
                 });
             });
             
-            // Login form
+            // Login form - ИСПРАВЛЕННЫЕ ID
             if (loginForm) {
                 loginForm.addEventListener('submit', (e) => {
                     e.preventDefault();
-                    const username = document.getElementById('loginUsername')?.value;
-                    const password = document.getElementById('loginPassword')?.value;
+                    // Пробуем разные возможные ID для полей ввода
+                    const username = document.getElementById('loginUsername')?.value || 
+                                   document.getElementById('username')?.value ||
+                                   document.querySelector('#loginForm input[type="text"]')?.value;
+                    const password = document.getElementById('loginPassword')?.value || 
+                                   document.getElementById('password')?.value ||
+                                   document.querySelector('#loginForm input[type="password"]')?.value;
+                    
+                    console.log('Логин - username:', username, 'password:', password);
                     
                     if (username && password) {
                         currentUser = username;
@@ -2493,20 +2500,31 @@
                         }
                     } else {
                         alert('Пожалуйста, заполните все поля!');
+                        console.log('Ошибка: не все поля заполнены');
                     }
                 });
             }
             
-            // Register form - ИСПРАВЛЕННАЯ РЕГИСТРАЦИЯ
+            // Register form - ИСПРАВЛЕННЫЕ ID
             if (registerForm) {
                 registerForm.addEventListener('submit', (e) => {
                     e.preventDefault();
-                    const username = document.getElementById('registerUsername')?.value;
-                    const password = document.getElementById('registerPassword')?.value;
-                    const confirmPassword = document.getElementById('registerConfirmPassword')?.value;
+                    // Пробуем разные возможные ID для полей ввода
+                    const username = document.getElementById('registerUsername')?.value || 
+                                   document.getElementById('regUsername')?.value ||
+                                   document.querySelector('#registerForm input[type="text"]')?.value;
+                    const password = document.getElementById('registerPassword')?.value || 
+                                   document.getElementById('regPassword')?.value ||
+                                   document.querySelectorAll('#registerForm input[type="password"]')[0]?.value;
+                    const confirmPassword = document.getElementById('registerConfirmPassword')?.value || 
+                                          document.getElementById('regConfirmPassword')?.value ||
+                                          document.querySelectorAll('#registerForm input[type="password"]')[1]?.value;
+                    
+                    console.log('Регистрация - username:', username, 'password:', password, 'confirmPassword:', confirmPassword);
                     
                     if (!username || !password || !confirmPassword) {
                         alert('Пожалуйста, заполните все поля!');
+                        console.log('Ошибка: не все поля заполнены');
                         return;
                     }
                     
