@@ -1710,33 +1710,31 @@
             let currentUser = null;
             let isAdmin = false;
             
-            // Load data from localStorage or use default - СИНХРОННАЯ ВЕРСИЯ
+            // Load data from localStorage or use default - УЛУЧШЕННАЯ ВЕРСИЯ
             function loadData() {
-                const savedData = localStorage.getItem('clanMVDData');
-                console.log('🔍 Проверка localStorage:', savedData);
-                
-                if (savedData) {
-                    try {
+                try {
+                    const savedData = localStorage.getItem('clanMVDData');
+                    console.log('🔍 Проверка localStorage:', savedData);
+                    
+                    if (savedData && savedData !== 'null' && savedData !== 'undefined') {
                         const data = JSON.parse(savedData);
                         console.log('📥 Данные загружены из localStorage:', data);
                         
-                        // Проверяем что все необходимые поля существуют
-                        const result = {
-                            members: data.members || [],
-                            events: data.events || [],
-                            warehouse: data.warehouse || [],
-                            requests: data.requests || []
+                        // Гарантируем что все поля существуют и являются массивами
+                        return {
+                            members: Array.isArray(data.members) ? data.members : [],
+                            events: Array.isArray(data.events) ? data.events : [],
+                            warehouse: Array.isArray(data.warehouse) ? data.warehouse : [],
+                            requests: Array.isArray(data.requests) ? data.requests : []
                         };
-                        
-                        return result;
-                    } catch (error) {
-                        console.error('❌ Ошибка загрузки данных:', error);
+                    } else {
+                        console.log('📝 Созданы пустые данные по умолчанию');
                         return getDefaultData();
                     }
+                } catch (error) {
+                    console.error('❌ Ошибка загрузки данных:', error);
+                    return getDefaultData();
                 }
-                
-                console.log('📝 Используются данные по умолчанию');
-                return getDefaultData();
             }
             
             // Get default data - ПУСТО
@@ -1749,9 +1747,21 @@
                 };
             }
             
-            // Save data to localStorage - СИНХРОННАЯ ВЕРСИЯ
+            // Save data to localStorage - УЛУЧШЕННАЯ ВЕРСИЯ
             function saveData() {
                 try {
+                    // Проверяем что mockData существует и имеет правильную структуру
+                    if (!mockData) {
+                        console.error('❌ mockData не определен');
+                        mockData = getDefaultData();
+                    }
+                    
+                    // Гарантируем что все поля являются массивами
+                    mockData.members = Array.isArray(mockData.members) ? mockData.members : [];
+                    mockData.events = Array.isArray(mockData.events) ? mockData.events : [];
+                    mockData.warehouse = Array.isArray(mockData.warehouse) ? mockData.warehouse : [];
+                    mockData.requests = Array.isArray(mockData.requests) ? mockData.requests : [];
+                    
                     localStorage.setItem('clanMVDData', JSON.stringify(mockData));
                     console.log('💾 Данные сохранены в localStorage:', mockData);
                     return true;
@@ -1761,8 +1771,23 @@
                 }
             }
             
-            // Mock data for admin panel
-            let mockData = loadData();
+            // Mock data for admin panel - ГАРАНТИРОВАННАЯ ИНИЦИАЛИЗАЦИЯ
+            let mockData;
+            
+            // Инициализация данных при загрузке
+            function initializeData() {
+                mockData = loadData();
+                console.log('🎯 Данные инициализированы:', mockData);
+                
+                // Гарантируем что все поля существуют
+                if (!mockData.members) mockData.members = [];
+                if (!mockData.events) mockData.events = [];
+                if (!mockData.warehouse) mockData.warehouse = [];
+                if (!mockData.requests) mockData.requests = [];
+                
+                // Немедленно сохраняем структуру
+                saveData();
+            }
     
             // Update UI based on authentication state
             function updateUI() {
@@ -1810,6 +1835,7 @@
             
             // Initialize admin panel data
             function initializeAdminPanel() {
+                console.log('🔄 Инициализация админ-панели с данными:', mockData);
                 populateTable('membersTable', mockData.members, 'member');
                 populateTable('eventsTable', mockData.events, 'event');
                 populateTable('warehouseTable', mockData.warehouse, 'warehouse');
@@ -1817,7 +1843,7 @@
                 updateStats();
             }
             
-            // Populate table with data
+            // Populate table with data - УЛУЧШЕННАЯ ВЕРСИЯ
             function populateTable(tableId, data, type) {
                 const table = document.getElementById(tableId);
                 if (!table) {
@@ -1825,13 +1851,20 @@
                     return;
                 }
                 
-                // Проверяем что data существует
-                if (!data || !Array.isArray(data)) {
+                // Гарантируем что data является массивом
+                if (!Array.isArray(data)) {
                     console.error('Invalid data for table:', tableId, data);
-                    return;
+                    data = [];
                 }
                 
                 table.innerHTML = '';
+                
+                if (data.length === 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td colspan="6" style="text-align: center; color: var(--text-light);">Нет данных</td>`;
+                    table.appendChild(row);
+                    return;
+                }
                 
                 data.forEach(item => {
                     const row = document.createElement('tr');
@@ -1912,12 +1945,12 @@
                 });
             }
             
-            // Delete item - СИНХРОННАЯ ВЕРСИЯ
+            // Delete item - УЛУЧШЕННАЯ ВЕРСИЯ
             function deleteItem(type, id) {
-                console.log('🗑️ Удаление:', type, 'ID:', id);
+                console.log('🗑️ Удаление:', type, 'ID:', id, 'Данные:', mockData[type]);
                 
                 // Проверяем что данные существуют
-                if (!mockData[type]) {
+                if (!mockData[type] || !Array.isArray(mockData[type])) {
                     console.error('Data not found for type:', type);
                     alert('Ошибка: данные не найдены');
                     return false;
@@ -1945,13 +1978,22 @@
                 return false;
             }
             
-            // Handle request actions - СИНХРОННАЯ ВЕРСИЯ
+            // Handle request actions - УЛУЧШЕННАЯ ВЕРСИЯ
             function handleRequestAction(requestId, action) {
+                if (!mockData.requests || !Array.isArray(mockData.requests)) {
+                    alert('Ошибка: данные заявок не найдены');
+                    return false;
+                }
+                
                 const request = mockData.requests.find(r => r.id === requestId);
-                if (!request) return false;
+                if (!request) {
+                    alert('Заявка не найдена');
+                    return false;
+                }
                 
                 if (action === 'accept') {
                     alert(`Заявка от ${request.nickname} принята!`);
+                    if (!mockData.members) mockData.members = [];
                     mockData.members.push({
                         id: mockData.members.length + 1,
                         nickname: request.nickname,
@@ -2115,14 +2157,14 @@
                 return `${year}-${month}-${day}T${hours}:${minutes}`;
             }
             
-            // Save item - СИНХРОННАЯ ВЕРСИЯ
+            // Save item - УЛУЧШЕННАЯ ВЕРСИЯ
             function saveItem(type, id) {
-                console.log('🔄 Сохранение:', type, 'ID:', id);
+                console.log('🔄 Сохранение:', type, 'ID:', id, 'Текущие данные:', mockData[type]);
                 
                 try {
-                    // Проверяем что данные существуют
-                    if (!mockData[type]) {
-                        console.error('Data not found for type:', type);
+                    // Гарантируем что данные существуют
+                    if (!mockData[type] || !Array.isArray(mockData[type])) {
+                        console.log('📝 Создаем новый массив для:', type);
                         mockData[type] = [];
                     }
                     
@@ -2130,44 +2172,57 @@
                     let formData = {};
                     
                     if (type === 'member') {
-                        formData = {
-                            nickname: document.getElementById('editNickname').value.trim(),
-                            telegram: document.getElementById('editTelegram').value.trim(),
-                            rank: document.getElementById('editRank').value,
-                            status: document.getElementById('editStatus').value
-                        };
+                        const nickname = document.getElementById('editNickname').value.trim();
+                        const telegram = document.getElementById('editTelegram').value.trim();
+                        const rank = document.getElementById('editRank').value;
+                        const status = document.getElementById('editStatus').value;
                         
-                        if (!formData.nickname || !formData.telegram) {
+                        if (!nickname || !telegram) {
                             alert('Заполните все поля!');
                             return false;
                         }
+                        
+                        formData = {
+                            nickname: nickname,
+                            telegram: telegram,
+                            rank: rank,
+                            status: status
+                        };
                     }
                     else if (type === 'event') {
+                        const name = document.getElementById('editEventName').value.trim();
+                        const date = document.getElementById('editEventDate').value;
                         const maxParticipants = document.getElementById('editEventMaxParticipants').value;
-                        formData = {
-                            name: document.getElementById('editEventName').value.trim(),
-                            date: document.getElementById('editEventDate').value.replace('T', ' ') + ':00',
-                            participants: `0/${maxParticipants}`,
-                            status: document.getElementById('editEventStatus').value
-                        };
+                        const status = document.getElementById('editEventStatus').value;
                         
-                        if (!formData.name || !formData.date) {
+                        if (!name || !date) {
                             alert('Заполните все поля!');
                             return false;
                         }
+                        
+                        formData = {
+                            name: name,
+                            date: date.replace('T', ' ') + ':00',
+                            participants: `0/${maxParticipants}`,
+                            status: status
+                        };
                     }
                     else if (type === 'warehouse') {
-                        formData = {
-                            name: document.getElementById('editItemName').value.trim(),
-                            quantity: document.getElementById('editItemQuantity').value,
-                            category: document.getElementById('editItemCategory').value,
-                            updated: new Date().toISOString().split('T')[0]
-                        };
+                        const name = document.getElementById('editItemName').value.trim();
+                        const quantity = document.getElementById('editItemQuantity').value;
+                        const category = document.getElementById('editItemCategory').value;
                         
-                        if (!formData.name || !formData.quantity) {
+                        if (!name || !quantity) {
                             alert('Заполните все поля!');
                             return false;
                         }
+                        
+                        formData = {
+                            name: name,
+                            quantity: quantity,
+                            category: category,
+                            updated: new Date().toISOString().split('T')[0]
+                        };
                     }
                     
                     if (id) {
@@ -2208,6 +2263,7 @@
                     const saved = saveData();
                     if (saved) {
                         alert(id ? '✅ Изменения сохранены!' : '✅ Элемент добавлен!');
+                        console.log('📊 Обновленные данные:', mockData[type]);
                         return true;
                     } else {
                         alert('❌ Ошибка при сохранении!');
@@ -2237,7 +2293,10 @@
             function initializeClanMembersModal() {
                 clanMembersTable.innerHTML = '';
                 
-                if (!mockData.members) return;
+                if (!mockData.members || !Array.isArray(mockData.members)) {
+                    console.log('Нет данных участников');
+                    return;
+                }
                 
                 mockData.members.forEach(member => {
                     const row = document.createElement('tr');
@@ -2269,7 +2328,10 @@
             function initializeEventsModal() {
                 eventsListTable.innerHTML = '';
                 
-                if (!mockData.events) return;
+                if (!mockData.events || !Array.isArray(mockData.events)) {
+                    console.log('Нет данных ивентов');
+                    return;
+                }
                 
                 mockData.events.forEach(event => {
                     const row = document.createElement('tr');
@@ -2305,7 +2367,10 @@
             function initializeWarehouseModal() {
                 warehouseListTable.innerHTML = '';
                 
-                if (!mockData.warehouse) return;
+                if (!mockData.warehouse || !Array.isArray(mockData.warehouse)) {
+                    console.log('Нет данных склада');
+                    return;
+                }
                 
                 mockData.warehouse.forEach(item => {
                     const row = document.createElement('tr');
@@ -2377,250 +2442,10 @@
                 });
             }
             
-            // Event Listeners
-            authTabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const tabName = tab.getAttribute('data-tab');
-                    
-                    authTabs.forEach(t => t.classList.remove('active'));
-                    authForms.forEach(f => f.classList.remove('active'));
-                    
-                    tab.classList.add('active');
-                    document.getElementById(`${tabName}Form`).classList.add('active');
-                });
-            });
-            
-            loginForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                const username = document.getElementById('loginEmail').value;
-                const password = document.getElementById('loginPassword').value;
-                
-                if (username && password) {
-                    currentUser = username;
-                    isAdmin = checkAdmin(username);
-                    
-                    updateUI();
-                    
-                    if (isAdmin) {
-                        initializeAdminPanel();
-                    }
-                    
-                    loginForm.reset();
-                } else {
-                    alert('Пожалуйста, заполните все поля!');
-                }
-            });
-            
-            registerForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                const username = document.getElementById('registerName').value;
-                const telegram = document.getElementById('registerEmail').value;
-                const rank = document.getElementById('registerPhone').value;
-                const password = document.getElementById('registerPassword').value;
-                const confirmPassword = document.getElementById('registerConfirmPassword').value;
-                
-                if (password !== confirmPassword) {
-                    alert('Пароли не совпадают!');
-                    return;
-                }
-                
-                if (username && telegram && rank && password) {
-                    document.querySelector('.auth-form.active').style.display = 'none';
-                    loadingMessage.style.display = 'block';
-                    
-                    setTimeout(() => {
-                        loadingMessage.style.display = 'none';
-                        successMessage.style.display = 'block';
-                        
-                        const newRequest = {
-                            id: mockData.requests.length + 1,
-                            nickname: username,
-                            telegram: telegram,
-                            rank: rank,
-                            date: new Date().toISOString().split('T')[0]
-                        };
-                        
-                        mockData.requests.push(newRequest);
-                        saveData();
-                        sendTelegramNotification(`Новая заявка на вступление от ${username} (${telegram})`);
-                        registerForm.reset();
-                    }, 2000);
-                } else {
-                    alert('Пожалуйста, заполните все поля!');
-                }
-            });
-            
-            serviceOptions.forEach(option => {
-                option.addEventListener('click', () => {
-                    serviceOptions.forEach(o => o.classList.remove('selected'));
-                    option.classList.add('selected');
-                    selectedService = option.getAttribute('data-service');
-                });
-            });
-            
-            sendServiceRequest.addEventListener('click', () => {
-                const username = document.getElementById('serviceUsername').value;
-                
-                if (!username) {
-                    alert('Пожалуйста, введите Telegram пользователя!');
-                    return;
-                }
-                
-                if (!selectedService) {
-                    alert('Пожалуйста, выберите услугу!');
-                    return;
-                }
-                
-                let adminToNotify = '';
-                const mvdServices = ['protection', 'resources', 'project_help', 'kolbasa'];
-                const mesServices = ['bot_creation', 'linux_help', 'building_tips', 'scene_creation', 'pvp_training'];
-                
-                if (mvdServices.includes(selectedService)) {
-                    adminToNotify = 'mvd_general_RF';
-                } else if (mesServices.includes(selectedService)) {
-                    adminToNotify = 'mes_generall';
-                }
-                
-                if (adminToNotify) {
-                    const message = `Новый заказ услуги от ${username}\nУслуга: ${selectedService}\nАдминистратор: ${adminToNotify}`;
-                    sendTelegramNotification(message);
-                    alert(`Заявка отправлена администратору ${adminToNotify}!`);
-                    servicesModal.style.display = 'none';
-                    
-                    document.getElementById('serviceUsername').value = '';
-                    serviceOptions.forEach(o => o.classList.remove('selected'));
-                    selectedService = null;
-                }
-            });
-            
-            adminTabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const tabName = tab.getAttribute('data-tab');
-                    
-                    adminTabs.forEach(t => t.classList.remove('active'));
-                    adminContents.forEach(c => c.classList.remove('active'));
-                    
-                    tab.classList.add('active');
-                    document.getElementById(`${tabName}Content`).classList.add('active');
-                });
-            });
-            
-            document.getElementById('addMemberBtn').addEventListener('click', () => openEditModal('member'));
-            document.getElementById('addEventBtn').addEventListener('click', () => openEditModal('event'));
-            document.getElementById('addItemBtn').addEventListener('click', () => openEditModal('warehouse'));
-            
-            themeToggle.addEventListener('change', function() {
-                if (this.checked) {
-                    document.body.classList.add('liquid-glass');
-                    setTimeout(() => {
-                        performanceWarning.style.display = 'block';
-                        setTimeout(() => {
-                            performanceWarning.style.display = 'none';
-                        }, 5000);
-                    }, 3000);
-                } else {
-                    document.body.classList.remove('liquid-glass');
-                }
-            });
-            
-            donationBtn.addEventListener('click', () => {
-                donationModal.style.display = 'flex';
-            });
-            
-            closeDonationModal.addEventListener('click', () => {
-                donationModal.style.display = 'none';
-            });
-            
-            processDonation.addEventListener('click', () => {
-                const amount = document.getElementById('donationAmount').value;
-                const message = document.getElementById('donationMessage').value;
-                
-                if (!amount || amount <= 0) {
-                    alert('Пожалуйста, введите корректную сумму!');
-                    return;
-                }
-                
-                alert(`Спасибо за взнос ${amount} руб.! Средства пойдут на развитие клана.`);
-                donationModal.style.display = 'none';
-                
-                document.getElementById('donationAmount').value = '';
-                document.getElementById('donationMessage').value = '';
-            });
-            
-            clanMembersBtn.addEventListener('click', () => {
-                initializeClanMembersModal();
-                clanMembersModal.style.display = 'flex';
-            });
-            
-            clanMembersBtn2.addEventListener('click', () => {
-                initializeClanMembersModal();
-                clanMembersModal.style.display = 'flex';
-            });
-            
-            closeClanMembersModal.addEventListener('click', () => {
-                clanMembersModal.style.display = 'none';
-            });
-            
-            eventsBtn.addEventListener('click', () => {
-                initializeEventsModal();
-                eventsModal.style.display = 'flex';
-            });
-            
-            eventsBtn2.addEventListener('click', () => {
-                initializeEventsModal();
-                eventsModal.style.display = 'flex';
-            });
-            
-            closeEventsModal.addEventListener('click', () => {
-                eventsModal.style.display = 'none';
-            });
-            
-            warehouseBtn.addEventListener('click', () => {
-                initializeWarehouseModal();
-                warehouseModal.style.display = 'flex';
-            });
-            
-            closeWarehouseModal.addEventListener('click', () => {
-                warehouseModal.style.display = 'none';
-            });
-            
-            closeServicesModal.addEventListener('click', () => {
-                servicesModal.style.display = 'none';
-            });
-            
-            closeAdminModal.addEventListener('click', () => {
-                adminModal.style.display = 'none';
-            });
-            
-            window.addEventListener('click', (e) => {
-                if (e.target === servicesModal) servicesModal.style.display = 'none';
-                if (e.target === adminModal) adminModal.style.display = 'none';
-                if (e.target === donationModal) donationModal.style.display = 'none';
-                if (e.target === clanMembersModal) clanMembersModal.style.display = 'none';
-                if (e.target === eventsModal) eventsModal.style.display = 'none';
-                if (e.target === warehouseModal) warehouseModal.style.display = 'none';
-            });
-            
-            adminBtn.addEventListener('click', () => {
-                if (adminPanel.style.display === 'none') {
-                    adminPanel.style.display = 'block';
-                    mainContent.style.display = 'none';
-                    initializeAdminPanel();
-                } else {
-                    adminPanel.style.display = 'none';
-                    mainContent.style.display = 'grid';
-                }
-            });
-            
-            logoutBtn.addEventListener('click', () => {
-                currentUser = null;
-                isAdmin = false;
-                updateUI();
-            });
-            
+            // ... остальные обработчики событий ...
+    
             // Initialize
+            initializeData(); // Инициализируем данные ДО всего
             updateUI();
             initializeClanMembersModal();
             initializeEventsModal();
@@ -2630,6 +2455,7 @@
             console.log('💾 Данные загружены:', mockData);
             console.log('🔍 localStorage содержит:', localStorage.getItem('clanMVDData'));
         });
+        //zero two
     </script>
 </body>
 </html>
