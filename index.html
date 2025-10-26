@@ -1199,7 +1199,7 @@
             <aside class="sidebar">
                 <h2>УСЛУГИ КЛАНА</h2>
                 <ul>
-                    <li><a href="#"><i class="fas fa-users"></i> Состав клана</a></li>
+                    <li><a href="#" id="clanMembersBtn"><i class="fas fa-users"></i> Состав клана</a></li>
                     <li><a href="#"><i class="fas fa-trophy"></i> Достижения</a></li>
                     <li><a href="#"><i class="fas fa-calendar"></i> Расписание ивентов</a></li>
                     <li><a href="#"><i class="fas fa-shield-alt"></i> Защита территории</a></li>
@@ -1212,7 +1212,7 @@
                 <ul>
                     <li><a href="#" id="servicesBtn"><i class="fas fa-handshake"></i> Заказать услугу</a></li>
                     <li><a href="#"><i class="fas fa-user-friends"></i> Пригласить друга</a></li>
-                    <li><a href="#"><i class="fas fa-donate"></i> Сделать взнос</a></li>
+                    <li><a href="#" id="donationBtn"><i class="fas fa-donate"></i> Сделать взнос</a></li>
                     <li><a href="#"><i class="fas fa-question-circle"></i> Помощь</a></li>
                 </ul>
             </aside>
@@ -1233,7 +1233,7 @@
                             <div class="service-icon"><i class="fas fa-users"></i></div>
                             <h3>Состав клана</h3>
                             <p>Просмотр списка участников, их рангов и активности в Build logic</p>
-                            <button class="btn" style="width: 100%; margin-top: 10px;">Открыть</button>
+                            <button class="btn" style="width: 100%; margin-top: 10px;" id="clanMembersBtn2">Открыть</button>
                         </div>
                         
                         <div class="service-card">
@@ -1469,6 +1469,112 @@
         </div>
     </div>
     
+    <!-- Modal for donation -->
+    <div class="modal" id="donationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Сделать взнос в клан</h2>
+                <button class="close-modal" id="closeDonationModal">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Выберите способ оплаты</label>
+                <div class="service-option" data-payment="qiwi">
+                    <div class="service-option-icon"><i class="fas fa-wallet"></i></div>
+                    <div>
+                        <h4>QIWI Кошелек</h4>
+                        <p>Оплата через QIWI кошелек</p>
+                    </div>
+                </div>
+                <div class="service-option" data-payment="card">
+                    <div class="service-option-icon"><i class="fas fa-credit-card"></i></div>
+                    <div>
+                        <h4>Банковская карта</h4>
+                        <p>Оплата картой Visa/Mastercard</p>
+                    </div>
+                </div>
+                <div class="service-option" data-payment="crypto">
+                    <div class="service-option-icon"><i class="fab fa-bitcoin"></i></div>
+                    <div>
+                        <h4>Криптовалюта</h4>
+                        <p>Оплата Bitcoin, USDT и другими криптовалютами</p>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="donationAmount">Сумма взноса (руб.)</label>
+                <input type="number" class="form-input" id="donationAmount" placeholder="Введите сумму">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="donationMessage">Комментарий к взносу (необязательно)</label>
+                <textarea class="form-input" id="donationMessage" placeholder="Например: На развитие клана"></textarea>
+            </div>
+            <button class="form-submit" id="processDonation">Перейти к оплате</button>
+        </div>
+    </div>
+    
+    <!-- Modal for clan members -->
+    <div class="modal" id="clanMembersModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Состав клана МВД</h2>
+                <button class="close-modal" id="closeClanMembersModal">&times;</button>
+            </div>
+            <div class="form-group">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Никнейм</th>
+                            <th>Telegram</th>
+                            <th>Звание</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>mvd_general</td>
+                            <td>@mvd_general_rf</td>
+                            <td>Генерал</td>
+                            <td>Активен</td>
+                        </tr>
+                        <tr>
+                            <td>mes_generall</td>
+                            <td>@mes_generall</td>
+                            <td>Генерал</td>
+                            <td>Активен</td>
+                        </tr>
+                        <tr>
+                            <td>Soldier_01</td>
+                            <td>@soldier01</td>
+                            <td>Сержант</td>
+                            <td>Активен</td>
+                        </tr>
+                        <tr>
+                            <td>Guard_007</td>
+                            <td>@guard007</td>
+                            <td>Лейтенант</td>
+                            <td>Неактивен</td>
+                        </tr>
+                        <tr>
+                            <td>Builder_Pro</td>
+                            <td>@builderpro</td>
+                            <td>Капитан</td>
+                            <td>Активен</td>
+                        </tr>
+                        <tr>
+                            <td>Scout_Master</td>
+                            <td>@scoutmaster</td>
+                            <td>Майор</td>
+                            <td>Активен</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="form-footer">
+                <p>Всего участников: <strong>24</strong> | Активных: <strong>18</strong></p>
+            </div>
+        </div>
+    </div>
+    
     <!-- Предупреждение о производительности -->
     <div class="performance-warning" id="performanceWarning">
         <i class="fas fa-exclamation-triangle"></i> Liquid Glass режим может замедлить работу на вашем устройстве
@@ -1487,6 +1593,7 @@
                     <ul>
                         <li><i class="fas fa-gamepad"></i> Игра: Build logic</li>
                         <li><i class="fab fa-telegram"></i> Telegram: @mvd_general_RF</li>
+                        <li><i class="fas fa-phone"></i> Телефон: +7 913 859 06-62</li>
                         <li><i class="fas fa-envelope"></i> Email: mvd.general.rf@gmail.com</li>
                         <li><i class="fas fa-crown"></i> Лидер: mvd</li>
                     </ul>
@@ -1539,6 +1646,14 @@
             const adminModalContent = document.getElementById('adminModalContent');
             const themeToggle = document.getElementById('themeToggle');
             const performanceWarning = document.getElementById('performanceWarning');
+            const donationBtn = document.getElementById('donationBtn');
+            const donationModal = document.getElementById('donationModal');
+            const closeDonationModal = document.getElementById('closeDonationModal');
+            const processDonation = document.getElementById('processDonation');
+            const clanMembersBtn = document.getElementById('clanMembersBtn');
+            const clanMembersBtn2 = document.getElementById('clanMembersBtn2');
+            const clanMembersModal = document.getElementById('clanMembersModal');
+            const closeClanMembersModal = document.getElementById('closeClanMembersModal');
             
             // Telegram bot configuration
             const TELEGRAM_BOT_TOKEN = '8249371074:AAHrRtSF-smyiQrQz4zTxrHW38UtRwVLsNU';
@@ -2104,6 +2219,52 @@
             // Add item button
             document.getElementById('addItemBtn').addEventListener('click', function() {
                 openEditModal('warehouse');
+            });
+            
+            // Donation button
+            donationBtn.addEventListener('click', function() {
+                donationModal.style.display = 'flex';
+            });
+            
+            closeDonationModal.addEventListener('click', function() {
+                donationModal.style.display = 'none';
+            });
+            
+            // Process donation
+            processDonation.addEventListener('click', function() {
+                const amount = document.getElementById('donationAmount').value;
+                const message = document.getElementById('donationMessage').value;
+                
+                if (!amount) {
+                    alert('Пожалуйста, укажите сумму взноса');
+                    return;
+                }
+                
+                const donationMessage = `💰 ВЗНОС В КЛАН\n👤 Пользователь: ${currentUser || 'Не указан'}\n💳 Сумма: ${amount} руб.\n📝 Комментарий: ${message || 'Не указан'}\n⏰ Время: ${new Date().toLocaleString()}`;
+                
+                // Отправляем сообщение администраторам
+                sendToAllAdmins(donationMessage)
+                .then(() => {
+                    alert('Спасибо за ваш взнос! Информация отправлена администраторам. Они свяжутся с вами для уточнения деталей оплаты.');
+                    donationModal.style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Ошибка отправки:', error);
+                    alert('Ошибка отправки информации о взносе: ' + error.message);
+                });
+            });
+            
+            // Clan members button
+            clanMembersBtn.addEventListener('click', function() {
+                clanMembersModal.style.display = 'flex';
+            });
+            
+            clanMembersBtn2.addEventListener('click', function() {
+                clanMembersModal.style.display = 'flex';
+            });
+            
+            closeClanMembersModal.addEventListener('click', function() {
+                clanMembersModal.style.display = 'none';
             });
             
             // Function to send message to ALL admins
