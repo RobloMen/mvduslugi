@@ -1717,6 +1717,13 @@
                     try {
                         const data = JSON.parse(savedData);
                         console.log('📥 Данные загружены из localStorage:', data);
+                        
+                        // Проверяем что все необходимые поля существуют
+                        if (!data.members) data.members = [];
+                        if (!data.events) data.events = [];
+                        if (!data.warehouse) data.warehouse = [];
+                        if (!data.requests) data.requests = [];
+                        
                         return data;
                     } catch (error) {
                         console.error('❌ Ошибка загрузки данных:', error);
@@ -1728,21 +1735,13 @@
                 return getDefaultData();
             }
             
-            // Get default data
+            // Get default data - ПУСТО
             function getDefaultData() {
                 return {
-                    members: [
-                        { id: 1, nickname: 'mvd_general', telegram: '@mvd_general_rf', rank: 'Генерал', status: 'Активен' },
-                        { id: 2, nickname: 'mes_generall', telegram: '@mes_generall', rank: 'Генерал', status: 'Активен' }
-                    ],
-                    events: [
-                    ],
-                    warehouse: [
-                        { id: 1, name: 'Алмазы', quantity: '64', category: 'Ресурсы', updated: '2024-01-13' },
-                        { id: 2, name: 'Железо', quantity: '128', category: 'Ресурсы', updated: '2024-01-13' }
-                    ],
-                    requests: [
-                    ]
+                    members: [],
+                    events: [],
+                    warehouse: [],
+                    requests: []
                 };
             }
             
