@@ -1200,20 +1200,20 @@
                 <h2>УСЛУГИ КЛАНА</h2>
                 <ul>
                     <li><a href="#" id="clanMembersBtn"><i class="fas fa-users"></i> Состав клана</a></li>
-                    <li><a href="#"><i class="fas fa-trophy"></i> Достижения</a></li>
-                    <li><a href="#"><i class="fas fa-calendar"></i> Расписание ивентов</a></li>
-                    <li><a href="#"><i class="fas fa-shield-alt"></i> Защита территории</a></li>
-                    <li><a href="#"><i class="fas fa-gem"></i> Ресурсы клана</a></li>
-                    <li><a href="#"><i class="fas fa-comments"></i> Клановый чат</a></li>
-                    <li><a href="#"><i class="fas fa-cog"></i> Настройки</a></li>
+                    <li><a href="#" id="achievementsBtn"><i class="fas fa-trophy"></i> Достижения</a></li>
+                    <li><a href="#" id="eventsBtn"><i class="fas fa-calendar"></i> Расписание ивентов</a></li>
+                    <li><a href="#" id="protectionBtn"><i class="fas fa-shield-alt"></i> Защита территории</a></li>
+                    <li><a href="#" id="resourcesBtn"><i class="fas fa-gem"></i> Ресурсы клана</a></li>
+                    <li><a href="#" id="chatBtn"><i class="fas fa-comments"></i> Клановый чат</a></li>
+                    <li><a href="#" id="settingsBtn"><i class="fas fa-cog"></i> Настройки</a></li>
                 </ul>
                 
                 <h2 style="margin-top: 30px;">БЫСТРЫЕ ДЕЙСТВИЯ</h2>
                 <ul>
                     <li><a href="#" id="servicesBtn"><i class="fas fa-handshake"></i> Заказать услугу</a></li>
-                    <li><a href="#"><i class="fas fa-user-friends"></i> Пригласить друга</a></li>
+                    <li><a href="#" id="inviteBtn"><i class="fas fa-user-friends"></i> Пригласить друга</a></li>
                     <li><a href="#" id="donationBtn"><i class="fas fa-donate"></i> Сделать взнос</a></li>
-                    <li><a href="#"><i class="fas fa-question-circle"></i> Помощь</a></li>
+                    <li><a href="#" id="helpBtn"><i class="fas fa-question-circle"></i> Помощь</a></li>
                 </ul>
             </aside>
             
@@ -1240,14 +1240,14 @@
                             <div class="service-icon"><i class="fas fa-calendar-check"></i></div>
                             <h3>Ивенты Build logic</h3>
                             <p>Расписание клановых мероприятий и рейдов в игре</p>
-                            <button class="btn" style="width: 100%; margin-top: 10px;">Посмотреть</button>
+                            <button class="btn" style="width: 100%; margin-top: 10px;" id="eventsBtn2">Посмотреть</button>
                         </div>
                         
                         <div class="service-card">
                             <div class="service-icon"><i class="fas fa-warehouse"></i></div>
                             <h3>Клановое хранилище</h3>
                             <p>Управление общими ресурсами и предметами в Build logic</p>
-                            <button class="btn" style="width: 100%; margin-top: 10px;">Доступно</button>
+                            <button class="btn" style="width: 100%; margin-top: 10px;" id="warehouseBtn">Доступно</button>
                         </div>
                     </div>
                 </section>
@@ -1529,48 +1529,69 @@
                             <th>Статус</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>mvd_general</td>
-                            <td>@mvd_general_rf</td>
-                            <td>Генерал</td>
-                            <td>Активен</td>
-                        </tr>
-                        <tr>
-                            <td>mes_generall</td>
-                            <td>@mes_generall</td>
-                            <td>Генерал</td>
-                            <td>Активен</td>
-                        </tr>
-                        <tr>
-                            <td>Soldier_01</td>
-                            <td>@soldier01</td>
-                            <td>Сержант</td>
-                            <td>Активен</td>
-                        </tr>
-                        <tr>
-                            <td>Guard_007</td>
-                            <td>@guard007</td>
-                            <td>Лейтенант</td>
-                            <td>Неактивен</td>
-                        </tr>
-                        <tr>
-                            <td>Builder_Pro</td>
-                            <td>@builderpro</td>
-                            <td>Капитан</td>
-                            <td>Активен</td>
-                        </tr>
-                        <tr>
-                            <td>Scout_Master</td>
-                            <td>@scoutmaster</td>
-                            <td>Майор</td>
-                            <td>Активен</td>
-                        </tr>
+                    <tbody id="clanMembersTable">
+                        <!-- Данные будут заполнены через JavaScript -->
                     </tbody>
                 </table>
             </div>
             <div class="form-footer">
-                <p>Всего участников: <strong>24</strong> | Активных: <strong>18</strong></p>
+                <p>Всего участников: <strong id="totalMembersCount">24</strong> | Активных: <strong id="activeMembersCount">18</strong></p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for events -->
+    <div class="modal" id="eventsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Расписание ивентов</h2>
+                <button class="close-modal" id="closeEventsModal">&times;</button>
+            </div>
+            <div class="form-group">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Дата</th>
+                            <th>Участники</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody id="eventsListTable">
+                        <!-- Данные будут заполнены через JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="form-footer">
+                <p>Всего ивентов: <strong id="totalEventsCount">3</strong> | Активных: <strong id="activeEventsCount">2</strong></p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for warehouse -->
+    <div class="modal" id="warehouseModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Клановое хранилище</h2>
+                <button class="close-modal" id="closeWarehouseModal">&times;</button>
+            </div>
+            <div class="form-group">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Количество</th>
+                            <th>Категория</th>
+                            <th>Последнее обновление</th>
+                        </tr>
+                    </thead>
+                    <tbody id="warehouseListTable">
+                        <!-- Данные будут заполнены через JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="form-footer">
+                <p>Всего предметов: <strong id="totalItemsCount">156</strong></p>
             </div>
         </div>
     </div>
@@ -1602,9 +1623,9 @@
                 <div class="footer-section">
                     <h3>ПОМОЩЬ</h3>
                     <ul>
-                        <li><a href="#"><i class="fas fa-book"></i> Правила клана</a></li>
-                        <li><a href="#"><i class="fas fa-headset"></i> Техподдержка</a></li>
-                        <li><a href="#"><i class="fas fa-exclamation-triangle"></i> Сообщить о проблеме</a></li>
+                        <li><a href="#" id="rulesBtn"><i class="fas fa-book"></i> Правила клана</a></li>
+                        <li><a href="#" id="supportBtn"><i class="fas fa-headset"></i> Техподдержка</a></li>
+                        <li><a href="#" id="reportBtn"><i class="fas fa-exclamation-triangle"></i> Сообщить о проблеме</a></li>
                     </ul>
                 </div>
             </div>
@@ -1654,6 +1675,16 @@
             const clanMembersBtn2 = document.getElementById('clanMembersBtn2');
             const clanMembersModal = document.getElementById('clanMembersModal');
             const closeClanMembersModal = document.getElementById('closeClanMembersModal');
+            const clanMembersTable = document.getElementById('clanMembersTable');
+            const eventsBtn = document.getElementById('eventsBtn');
+            const eventsBtn2 = document.getElementById('eventsBtn2');
+            const eventsModal = document.getElementById('eventsModal');
+            const closeEventsModal = document.getElementById('closeEventsModal');
+            const eventsListTable = document.getElementById('eventsListTable');
+            const warehouseBtn = document.getElementById('warehouseBtn');
+            const warehouseModal = document.getElementById('warehouseModal');
+            const closeWarehouseModal = document.getElementById('closeWarehouseModal');
+            const warehouseListTable = document.getElementById('warehouseListTable');
             
             // Telegram bot configuration
             const TELEGRAM_BOT_TOKEN = '8249371074:AAHrRtSF-smyiQrQz4zTxrHW38UtRwVLsNU';
@@ -1675,7 +1706,9 @@
                     { id: 1, nickname: 'mvd_general', telegram: '@mvd_general_rf', rank: 'Генерал', status: 'Активен' },
                     { id: 2, nickname: 'mes_generall', telegram: '@mes_generall', rank: 'Генерал', status: 'Активен' },
                     { id: 3, nickname: 'Soldier_01', telegram: '@soldier01', rank: 'Сержант', status: 'Активен' },
-                    { id: 4, nickname: 'Guard_007', telegram: '@guard007', rank: 'Лейтенант', status: 'Неактивен' }
+                    { id: 4, nickname: 'Guard_007', telegram: '@guard007', rank: 'Лейтенант', status: 'Неактивен' },
+                    { id: 5, nickname: 'Builder_Pro', telegram: '@builderpro', rank: 'Капитан', status: 'Активен' },
+                    { id: 6, nickname: 'Scout_Master', telegram: '@scoutmaster', rank: 'Майор', status: 'Активен' }
                 ],
                 events: [
                     { id: 1, name: 'Рейд на базу врага', date: '2024-01-15 20:00', participants: '12/20', status: 'Запланирован' },
@@ -1932,12 +1965,54 @@
             
             // Save admin data
             function saveAdminData(type, id) {
-                // In a real app, this would send data to server
+                // Get form values
+                let newItem = {};
+                
+                switch (type) {
+                    case 'member':
+                        newItem = {
+                            nickname: document.getElementById('editNickname').value,
+                            telegram: document.getElementById('editTelegram').value,
+                            rank: document.getElementById('editRank').value,
+                            status: document.getElementById('editStatus').value
+                        };
+                        break;
+                    case 'event':
+                        newItem = {
+                            name: document.getElementById('editEventName').value,
+                            date: document.getElementById('editEventDate').value.replace('T', ' '),
+                            participants: `0/${document.getElementById('editEventMax').value}`,
+                            status: document.getElementById('editEventStatus').value
+                        };
+                        break;
+                    case 'warehouse':
+                        newItem = {
+                            name: document.getElementById('editItemName').value,
+                            quantity: document.getElementById('editItemQuantity').value,
+                            category: document.getElementById('editItemCategory').value,
+                            updated: new Date().toISOString().split('T')[0]
+                        };
+                        break;
+                }
+                
+                if (id) {
+                    // Update existing item
+                    const index = mockData[type].findIndex(item => item.id === id);
+                    if (index !== -1) {
+                        mockData[type][index] = { ...mockData[type][index], ...newItem };
+                    }
+                } else {
+                    // Add new item
+                    newItem.id = mockData[type].length + 1;
+                    mockData[type].push(newItem);
+                }
+                
                 alert('Данные сохранены!');
                 adminModal.style.display = 'none';
                 
-                // For demo purposes, we'll just reload the table
+                // Reload tables
                 initializeAdminPanel();
+                updateStats();
             }
             
             // Update statistics
@@ -1946,6 +2021,98 @@
                 document.getElementById('activeEvents').textContent = mockData.events.filter(e => e.status === 'Запланирован' || e.status === 'В процессе').length;
                 document.getElementById('warehouseItems').textContent = mockData.warehouse.reduce((sum, item) => sum + parseInt(item.quantity), 0);
                 document.getElementById('pendingRequests').textContent = mockData.requests.length;
+            }
+            
+            // Populate clan members modal
+            function populateClanMembersModal() {
+                clanMembersTable.innerHTML = '';
+                
+                mockData.members.forEach(member => {
+                    const row = document.createElement('tr');
+                    
+                    const nicknameCell = document.createElement('td');
+                    nicknameCell.textContent = member.nickname;
+                    
+                    const telegramCell = document.createElement('td');
+                    telegramCell.textContent = member.telegram;
+                    
+                    const rankCell = document.createElement('td');
+                    rankCell.textContent = member.rank;
+                    
+                    const statusCell = document.createElement('td');
+                    statusCell.textContent = member.status;
+                    
+                    row.appendChild(nicknameCell);
+                    row.appendChild(telegramCell);
+                    row.appendChild(rankCell);
+                    row.appendChild(statusCell);
+                    
+                    clanMembersTable.appendChild(row);
+                });
+                
+                document.getElementById('totalMembersCount').textContent = mockData.members.length;
+                document.getElementById('activeMembersCount').textContent = mockData.members.filter(m => m.status === 'Активен').length;
+            }
+            
+            // Populate events modal
+            function populateEventsModal() {
+                eventsListTable.innerHTML = '';
+                
+                mockData.events.forEach(event => {
+                    const row = document.createElement('tr');
+                    
+                    const nameCell = document.createElement('td');
+                    nameCell.textContent = event.name;
+                    
+                    const dateCell = document.createElement('td');
+                    dateCell.textContent = event.date;
+                    
+                    const participantsCell = document.createElement('td');
+                    participantsCell.textContent = event.participants;
+                    
+                    const statusCell = document.createElement('td');
+                    statusCell.textContent = event.status;
+                    
+                    row.appendChild(nameCell);
+                    row.appendChild(dateCell);
+                    row.appendChild(participantsCell);
+                    row.appendChild(statusCell);
+                    
+                    eventsListTable.appendChild(row);
+                });
+                
+                document.getElementById('totalEventsCount').textContent = mockData.events.length;
+                document.getElementById('activeEventsCount').textContent = mockData.events.filter(e => e.status === 'Запланирован' || e.status === 'В процессе').length;
+            }
+            
+            // Populate warehouse modal
+            function populateWarehouseModal() {
+                warehouseListTable.innerHTML = '';
+                
+                mockData.warehouse.forEach(item => {
+                    const row = document.createElement('tr');
+                    
+                    const nameCell = document.createElement('td');
+                    nameCell.textContent = item.name;
+                    
+                    const quantityCell = document.createElement('td');
+                    quantityCell.textContent = item.quantity;
+                    
+                    const categoryCell = document.createElement('td');
+                    categoryCell.textContent = item.category;
+                    
+                    const updatedCell = document.createElement('td');
+                    updatedCell.textContent = item.updated;
+                    
+                    row.appendChild(nameCell);
+                    row.appendChild(quantityCell);
+                    row.appendChild(categoryCell);
+                    row.appendChild(updatedCell);
+                    
+                    warehouseListTable.appendChild(row);
+                });
+                
+                document.getElementById('totalItemsCount').textContent = mockData.warehouse.reduce((sum, item) => sum + parseInt(item.quantity), 0);
             }
             
             // Switch between login and register tabs
@@ -2256,15 +2423,42 @@
             
             // Clan members button
             clanMembersBtn.addEventListener('click', function() {
+                populateClanMembersModal();
                 clanMembersModal.style.display = 'flex';
             });
             
             clanMembersBtn2.addEventListener('click', function() {
+                populateClanMembersModal();
                 clanMembersModal.style.display = 'flex';
             });
             
             closeClanMembersModal.addEventListener('click', function() {
                 clanMembersModal.style.display = 'none';
+            });
+            
+            // Events button
+            eventsBtn.addEventListener('click', function() {
+                populateEventsModal();
+                eventsModal.style.display = 'flex';
+            });
+            
+            eventsBtn2.addEventListener('click', function() {
+                populateEventsModal();
+                eventsModal.style.display = 'flex';
+            });
+            
+            closeEventsModal.addEventListener('click', function() {
+                eventsModal.style.display = 'none';
+            });
+            
+            // Warehouse button
+            warehouseBtn.addEventListener('click', function() {
+                populateWarehouseModal();
+                warehouseModal.style.display = 'flex';
+            });
+            
+            closeWarehouseModal.addEventListener('click', function() {
+                warehouseModal.style.display = 'none';
             });
             
             // Function to send message to ALL admins
