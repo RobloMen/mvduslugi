@@ -2182,7 +2182,7 @@
                 return `${year}-${month}-${day}T${hours}:${minutes}`;
             }
             
-            // Save item - ИСПРАВЛЕННАЯ ВЕРСИЯ
+            // Save item - ПОЛНОСТЬЮ ПЕРЕПИСАННАЯ ВЕРСИЯ
             function saveItem(type, id) {
                 console.log('🔄 Сохранение:', type, 'ID:', id);
                 
@@ -2194,64 +2194,157 @@
                     
                     let formData = {};
                     let isValid = true;
-                    
-                    // ДЕБАГ: Покажем все элементы в модальном окне
-                    console.log('🔍 Поиск элементов в модальном окне:');
-                    const modalInputs = adminModalContent.querySelectorAll('input, select');
-                    modalInputs.forEach(input => {
-                        console.log(`📝 ${input.id}:`, input.value, 'required:', input.required);
-                    });
-                    
-                    if (type === 'member') {
-                        const nickname = document.getElementById('editNickname')?.value?.trim();
-                        const telegram = document.getElementById('editTelegram')?.value?.trim();
-                        const rank = document.getElementById('editRank')?.value;
-                        const status = document.getElementById('editStatus')?.value;
+    
+                    // АЛЬТЕРНАТИВНЫЙ ПОИСК ЭЛЕМЕНТОВ
+                    function getElementValue(selector) {
+                        // Пробуем разные способы найти элемент
+                        let element = document.getElementById(selector);
                         
-                        console.log('👤 Данные участника:', { 
+                        if (!element) {
+                            // Ищем по name
+                            element = document.querySelector(`[name="${selector}"]`);
+                        }
+                        
+                        if (!element) {
+                            // Ищем по placeholder
+                            element = document.querySelector(`[placeholder*="${selector}"]`);
+                        }
+                        
+                        if (!element) {
+                            // Ищем по ближайшему label
+                            const labels = document.querySelectorAll('label');
+                            for (let label of labels) {
+                                if (label.textContent.includes(selector)) {
+                                    const input = label.nextElementSibling;
+                                    if (input && (input.tagName === 'INPUT' || input.tagName === 'SELECT')) {
+                                        element = input;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+    
+                        if (!element && adminModalContent) {
+                            // Ищем внутри модального окна
+                            element = adminModalContent.querySelector(`#${selector}`) || 
+                                     adminModalContent.querySelector(`[name="${selector}"]`) ||
+                                     adminModalContent.querySelector(`input, select`);
+                        }
+    
+                        console.log(`🔍 Поиск ${selector}:`, element);
+                        return element ? element.value : null;
+                    }
+    
+                    // ПОЛУЧАЕМ ВСЕ ЭЛЕМЕНТЫ ИЗ МОДАЛЬНОГО ОКНА
+                    console.log('🔍 Все элементы в модальном окне:');
+                    const allInputs = adminModalContent ? adminModalContent.querySelectorAll('input, select, textarea') : [];
+                    allInputs.forEach(input => {
+                        console.log(`📝 Элемент:`, {
+                            id: input.id,
+                            name: input.name,
+                            type: input.type,
+                            value: input.value,
+                            tagName: input.tagName,
+                            placeholder: input.placeholder
+                        });
+                    });
+    
+                    if (type === 'member') {
+                        // Получаем значения ВСЕМИ возможными способами
+                        let nickname, telegram, rank, status;
+    
+                        // Способ 1: По ID
+                        nickname = document.getElementById('editNickname')?.value;
+                        telegram = document.getElementById('editTelegram')?.value;
+                        rank = document.getElementById('editRank')?.value;
+                        status = document.getElementById('editStatus')?.value;
+    
+                        // Способ 2: Если не нашли по ID, ищем по индексу
+                        if (!nickname || !telegram) {
+                            const inputs = adminModalContent ? adminModalContent.querySelectorAll('input[type="text"]') : [];
+                            if (inputs.length >= 1) nickname = inputs[0]?.value;
+                            if (inputs.length >= 2) telegram = inputs[1]?.value;
+                        }
+    
+                        // Способ 3: Ищем по placeholder или label
+                        if (!nickname || !telegram) {
+                            nickname = getElementValue('Никнейм') || getElementValue('никнейм') || getElementValue('nickname');
+                            telegram = getElementValue('Telegram') || getElementValue('telegram');
+                        }
+    
+                        // Способ 4: Ищем любые текстовые поля
+                        if (!nickname || !telegram) {
+                            const textInputs = adminModalContent ? Array.from(adminModalContent.querySelectorAll('input[type="text"]')) : [];
+                            if (textInputs[0]) nickname = textInputs[0].value;
+                            if (textInputs[1]) telegram = textInputs[1].value;
+                        }
+    
+                        console.log('👤 Финальные данные участника:', { 
                             nickname, 
                             telegram, 
                             rank, 
                             status,
-                            nicknameExists: !!document.getElementById('editNickname'),
-                            telegramExists: !!document.getElementById('editTelegram')
+                            nicknameFound: !!nickname,
+                            telegramFound: !!telegram
                         });
-                        
+    
                         if (!nickname || !telegram) {
-                            alert('Заполните все поля!');
-                            console.log('❌ Ошибка валидации: nickname:', nickname, 'telegram:', telegram);
+                            alert('Заполните все поля! Никнейм и Telegram обязательны.');
+                            console.log('❌ Ошибка: nickname:', nickname, 'telegram:', telegram);
                             isValid = false;
                         } else {
                             formData = {
-                                nickname: nickname,
-                                telegram: telegram,
+                                nickname: nickname.trim(),
+                                telegram: telegram.trim(),
                                 rank: rank || 'Рядовой',
                                 status: status || 'Активен'
                             };
                         }
                     }
                     else if (type === 'event') {
-                        const name = document.getElementById('editEventName')?.value?.trim();
-                        const date = document.getElementById('editEventDate')?.value;
-                        const maxParticipants = document.getElementById('editEventMaxParticipants')?.value;
-                        const status = document.getElementById('editEventStatus')?.value;
-                        
-                        console.log('🎯 Данные ивента:', { 
+                        let name, date, maxParticipants, status;
+    
+                        // Способ 1: По ID
+                        name = document.getElementById('editEventName')?.value;
+                        date = document.getElementById('editEventDate')?.value;
+                        maxParticipants = document.getElementById('editEventMaxParticipants')?.value;
+                        status = document.getElementById('editEventStatus')?.value;
+    
+                        // Способ 2: По типам полей
+                        if (!name || !date) {
+                            const textInputs = adminModalContent ? adminModalContent.querySelectorAll('input[type="text"]') : [];
+                            const dateInputs = adminModalContent ? adminModalContent.querySelectorAll('input[type="datetime-local"]') : [];
+                            const numberInputs = adminModalContent ? adminModalContent.querySelectorAll('input[type="number"]') : [];
+                            
+                            if (textInputs[0]) name = textInputs[0].value;
+                            if (dateInputs[0]) date = dateInputs[0].value;
+                            if (numberInputs[0]) maxParticipants = numberInputs[0].value;
+                        }
+    
+                        // Способ 3: По содержимому
+                        if (!name || !date) {
+                            name = getElementValue('Название ивента') || getElementValue('ивент') || getElementValue('event');
+                            date = getElementValue('Дата и время') || getElementValue('дата') || getElementValue('date');
+                            maxParticipants = getElementValue('Максимум участников') || getElementValue('участник') || '20';
+                        }
+    
+                        console.log('🎯 Финальные данные ивента:', { 
                             name, 
                             date, 
                             maxParticipants, 
                             status,
-                            nameExists: !!document.getElementById('editEventName'),
-                            dateExists: !!document.getElementById('editEventDate')
+                            nameFound: !!name,
+                            dateFound: !!date,
+                            maxParticipantsFound: !!maxParticipants
                         });
-                        
+    
                         if (!name || !date || !maxParticipants) {
-                            alert('Заполните все поля!');
-                            console.log('❌ Ошибка валидации: name:', name, 'date:', date, 'maxParticipants:', maxParticipants);
+                            alert('Заполните все поля! Название, дата и количество участников обязательны.');
+                            console.log('❌ Ошибка: name:', name, 'date:', date, 'maxParticipants:', maxParticipants);
                             isValid = false;
                         } else {
                             formData = {
-                                name: name,
+                                name: name.trim(),
                                 date: formatEventDate(date),
                                 participants: `0/${maxParticipants}`,
                                 status: status || 'Запланирован'
@@ -2259,25 +2352,43 @@
                         }
                     }
                     else if (type === 'warehouse') {
-                        const name = document.getElementById('editItemName')?.value?.trim();
-                        const quantity = document.getElementById('editItemQuantity')?.value;
-                        const category = document.getElementById('editItemCategory')?.value;
-                        
-                        console.log('📦 Данные предмета:', { 
+                        let name, quantity, category;
+    
+                        // Способ 1: По ID
+                        name = document.getElementById('editItemName')?.value;
+                        quantity = document.getElementById('editItemQuantity')?.value;
+                        category = document.getElementById('editItemCategory')?.value;
+    
+                        // Способ 2: По типам полей
+                        if (!name || !quantity) {
+                            const textInputs = adminModalContent ? adminModalContent.querySelectorAll('input[type="text"]') : [];
+                            const numberInputs = adminModalContent ? adminModalContent.querySelectorAll('input[type="number"]') : [];
+                            
+                            if (textInputs[0]) name = textInputs[0].value;
+                            if (numberInputs[0]) quantity = numberInputs[0].value;
+                        }
+    
+                        // Способ 3: По содержимому
+                        if (!name || !quantity) {
+                            name = getElementValue('Название предмета') || getElementValue('предмет') || getElementValue('item');
+                            quantity = getElementValue('Количество') || getElementValue('количество') || getElementValue('quantity');
+                        }
+    
+                        console.log('📦 Финальные данные предмета:', { 
                             name, 
                             quantity, 
                             category,
-                            nameExists: !!document.getElementById('editItemName'),
-                            quantityExists: !!document.getElementById('editItemQuantity')
+                            nameFound: !!name,
+                            quantityFound: !!quantity
                         });
-                        
+    
                         if (!name || !quantity) {
-                            alert('Заполните все поля!');
-                            console.log('❌ Ошибка валидации: name:', name, 'quantity:', quantity);
+                            alert('Заполните все поля! Название и количество обязательны.');
+                            console.log('❌ Ошибка: name:', name, 'quantity:', quantity);
                             isValid = false;
                         } else {
                             formData = {
-                                name: name,
+                                name: name.trim(),
                                 quantity: parseInt(quantity) || 0,
                                 category: category || 'Другое',
                                 updated: new Date().toLocaleDateString('ru-RU')
@@ -2292,41 +2403,31 @@
                     
                     console.log('✅ Данные для сохранения:', formData);
                     
+                    // ДАЛЕЕ ТА ЖЕ ЛОГИКА СОХРАНЕНИЯ
                     if (id) {
-                        // Редактирование существующего элемента
                         const index = mockData[type].findIndex(item => item.id === id);
                         if (index !== -1) {
-                            mockData[type][index] = {
-                                id: id,
-                                ...formData
-                            };
+                            mockData[type][index] = { id: id, ...formData };
                             console.log('✅ Обновлен элемент:', mockData[type][index]);
                         } else {
                             alert('Элемент не найден!');
                             return false;
                         }
                     } else {
-                        // Добавление нового элемента
                         const newId = mockData[type].length > 0 
                             ? Math.max(...mockData[type].map(item => parseInt(item.id) || 0)) + 1 
                             : 1;
                         
-                        const newItem = {
-                            id: newId,
-                            ...formData
-                        };
-                        
+                        const newItem = { id: newId, ...formData };
                         mockData[type].push(newItem);
                         console.log('✅ Добавлен новый элемент:', newItem);
                     }
                     
-                    // Обновляем интерфейс
                     populateTable(`${type}Table`, mockData[type], type);
                     updateStats();
                     
                     if (adminModal) adminModal.style.display = 'none';
                     
-                    // Синхронное сохранение
                     const saved = saveData();
                     if (saved) {
                         alert(id ? '✅ Изменения сохранены!' : '✅ Элемент добавлен!');
@@ -2343,6 +2444,7 @@
                     return false;
                 }
             }
+
             
             // Update statistics
             function updateStats() {
