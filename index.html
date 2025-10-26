@@ -2442,7 +2442,230 @@
                 });
             }
             
-            // ... остальные обработчики событий ...
+            // Event Listeners
+            
+            // Auth tabs
+            authTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const target = tab.getAttribute('data-tab');
+                    
+                    authTabs.forEach(t => t.classList.remove('active'));
+                    authForms.forEach(f => f.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(`${target}Form`).classList.add('active');
+                });
+            });
+            
+            // Login form
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const username = document.getElementById('loginUsername').value;
+                const password = document.getElementById('loginPassword').value;
+                
+                if (username && password) {
+                    currentUser = username;
+                    isAdmin = checkAdmin(username);
+                    updateUI();
+                    
+                    if (isAdmin) {
+                        initializeAdminPanel();
+                    }
+                    
+                    successMessage.textContent = 'Успешный вход!';
+                    successMessage.style.display = 'block';
+                    setTimeout(() => {
+                        successMessage.style.display = 'none';
+                    }, 3000);
+                }
+            });
+            
+            // Register form
+            registerForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const username = document.getElementById('registerUsername').value;
+                const password = document.getElementById('registerPassword').value;
+                const confirmPassword = document.getElementById('registerConfirmPassword').value;
+                
+                if (password !== confirmPassword) {
+                    alert('Пароли не совпадают!');
+                    return;
+                }
+                
+                if (username && password) {
+                    successMessage.textContent = 'Регистрация успешна! Теперь войдите в систему.';
+                    successMessage.style.display = 'block';
+                    
+                    setTimeout(() => {
+                        successMessage.style.display = 'none';
+                        document.getElementById('loginTab').click();
+                    }, 3000);
+                }
+            });
+            
+            // Logout
+            logoutBtn.addEventListener('click', () => {
+                currentUser = null;
+                isAdmin = false;
+                updateUI();
+            });
+            
+            // Admin button
+            adminBtn.addEventListener('click', () => {
+                if (isAdmin) {
+                    adminPanel.style.display = 'block';
+                    mainContent.style.display = 'none';
+                    initializeAdminPanel();
+                }
+            });
+            
+            // Admin tabs
+            adminTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const target = tab.getAttribute('data-tab');
+                    
+                    adminTabs.forEach(t => t.classList.remove('active'));
+                    adminContents.forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(`${target}Content`).classList.add('active');
+                });
+            });
+            
+            // Close admin modal
+            closeAdminModal.addEventListener('click', () => {
+                adminModal.style.display = 'none';
+            });
+            
+            // Add buttons for each section
+            document.getElementById('addMemberBtn').addEventListener('click', () => {
+                openEditModal('member');
+            });
+            
+            document.getElementById('addEventBtn').addEventListener('click', () => {
+                openEditModal('event');
+            });
+            
+            document.getElementById('addWarehouseBtn').addEventListener('click', () => {
+                openEditModal('warehouse');
+            });
+            
+            // Services modal
+            servicesBtn.addEventListener('click', () => {
+                servicesModal.style.display = 'flex';
+            });
+            
+            closeServicesModal.addEventListener('click', () => {
+                servicesModal.style.display = 'none';
+            });
+            
+            // Service selection
+            serviceOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    serviceOptions.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                    selectedService = option.getAttribute('data-service');
+                });
+            });
+            
+            // Send service request
+            sendServiceRequest.addEventListener('click', () => {
+                if (!selectedService) {
+                    alert('Пожалуйста, выберите услугу');
+                    return;
+                }
+                
+                if (!currentUser) {
+                    alert('Пожалуйста, войдите в систему');
+                    return;
+                }
+                
+                loadingMessage.style.display = 'block';
+                
+                setTimeout(() => {
+                    loadingMessage.style.display = 'none';
+                    servicesModal.style.display = 'none';
+                    alert(`Запрос на услугу "${selectedService}" отправлен!`);
+                    selectedService = null;
+                    serviceOptions.forEach(opt => opt.classList.remove('selected'));
+                }, 2000);
+            });
+            
+            // Theme toggle
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-theme');
+                themeToggle.innerHTML = document.body.classList.contains('dark-theme') 
+                    ? '<i class="fas fa-sun"></i>' 
+                    : '<i class="fas fa-moon"></i>';
+            });
+            
+            // Donation modal
+            donationBtn.addEventListener('click', () => {
+                donationModal.style.display = 'flex';
+            });
+            
+            closeDonationModal.addEventListener('click', () => {
+                donationModal.style.display = 'none';
+            });
+            
+            processDonation.addEventListener('click', () => {
+                const amount = document.getElementById('donationAmount').value;
+                if (amount && parseFloat(amount) > 0) {
+                    alert(`Спасибо за донат ${amount} руб!`);
+                    donationModal.style.display = 'none';
+                } else {
+                    alert('Пожалуйста, введите корректную сумму');
+                }
+            });
+            
+            // Clan members modal
+            clanMembersBtn.addEventListener('click', initializeClanMembersModal);
+            clanMembersBtn2.addEventListener('click', initializeClanMembersModal);
+            
+            clanMembersBtn.addEventListener('click', () => {
+                clanMembersModal.style.display = 'flex';
+            });
+            
+            clanMembersBtn2.addEventListener('click', () => {
+                clanMembersModal.style.display = 'flex';
+            });
+            
+            closeClanMembersModal.addEventListener('click', () => {
+                clanMembersModal.style.display = 'none';
+            });
+            
+            // Events modal
+            eventsBtn.addEventListener('click', initializeEventsModal);
+            eventsBtn2.addEventListener('click', initializeEventsModal);
+            
+            eventsBtn.addEventListener('click', () => {
+                eventsModal.style.display = 'flex';
+            });
+            
+            eventsBtn2.addEventListener('click', () => {
+                eventsModal.style.display = 'flex';
+            });
+            
+            closeEventsModal.addEventListener('click', () => {
+                eventsModal.style.display = 'none';
+            });
+            
+            // Warehouse modal
+            warehouseBtn.addEventListener('click', initializeWarehouseModal);
+            
+            warehouseBtn.addEventListener('click', () => {
+                warehouseModal.style.display = 'flex';
+            });
+            
+            closeWarehouseModal.addEventListener('click', () => {
+                warehouseModal.style.display = 'none';
+            });
+            
+            // Back to main from admin
+            document.getElementById('backToMain').addEventListener('click', () => {
+                adminPanel.style.display = 'none';
+                mainContent.style.display = 'grid';
+            });
     
             // Initialize
             initializeData(); // Инициализируем данные ДО всего
@@ -2455,7 +2678,6 @@
             console.log('💾 Данные загружены:', mockData);
             console.log('🔍 localStorage содержит:', localStorage.getItem('clanMVDData'));
         });
-        //zero two
     </script>
 </body>
 </html>
