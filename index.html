@@ -1640,7 +1640,7 @@
     </footer>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Elements - с проверками на существование
+            // Elements
             const authContainer = document.getElementById('authContainer');
             const mainContent = document.getElementById('mainContent');
             const adminPanel = document.getElementById('adminPanel');
@@ -1652,8 +1652,8 @@
             const currentUsername = document.getElementById('currentUsername');
             const authTabs = document.querySelectorAll('.auth-tab');
             const authForms = document.querySelectorAll('.auth-form');
-            const loginForm = document.getElementById('loginFormElement');
-            const registerForm = document.getElementById('registerFormElement');
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
             const successMessage = document.getElementById('successMessage');
             const loadingMessage = document.getElementById('loadingMessage');
             const servicesBtn = document.getElementById('servicesBtn');
@@ -1687,6 +1687,10 @@
             const warehouseModal = document.getElementById('warehouseModal');
             const closeWarehouseModal = document.getElementById('closeWarehouseModal');
             const warehouseListTable = document.getElementById('warehouseListTable');
+            const addMemberBtn = document.getElementById('addMemberBtn');
+            const addEventBtn = document.getElementById('addEventBtn');
+            const addWarehouseBtn = document.getElementById('addWarehouseBtn');
+            const backToMain = document.getElementById('backToMain');
             
             // Telegram bot configuration
             const TELEGRAM_BOT_TOKEN = '8249371074:AAHrRtSF-smyiQrQz4zTxrHW38UtRwVLsNU';
@@ -1710,7 +1714,10 @@
             let currentUser = null;
             let isAdmin = false;
             
-            // Load data from localStorage or use default - УЛУЧШЕННАЯ ВЕРСИЯ
+            // Mock data for admin panel
+            let mockData;
+            
+            // Load data from localStorage
             function loadData() {
                 try {
                     const savedData = localStorage.getItem('clanMVDData');
@@ -1720,7 +1727,6 @@
                         const data = JSON.parse(savedData);
                         console.log('📥 Данные загружены из localStorage:', data);
                         
-                        // Гарантируем что все поля существуют и являются массивами
                         return {
                             members: Array.isArray(data.members) ? data.members : [],
                             events: Array.isArray(data.events) ? data.events : [],
@@ -1737,7 +1743,7 @@
                 }
             }
             
-            // Get default data - ПУСТО
+            // Get default data
             function getDefaultData() {
                 return {
                     members: [],
@@ -1747,16 +1753,14 @@
                 };
             }
             
-            // Save data to localStorage - УЛУЧШЕННАЯ ВЕРСИЯ
+            // Save data to localStorage
             function saveData() {
                 try {
-                    // Проверяем что mockData существует и имеет правильную структуру
                     if (!mockData) {
                         console.error('❌ mockData не определен');
                         mockData = getDefaultData();
                     }
                     
-                    // Гарантируем что все поля являются массивами
                     mockData.members = Array.isArray(mockData.members) ? mockData.members : [];
                     mockData.events = Array.isArray(mockData.events) ? mockData.events : [];
                     mockData.warehouse = Array.isArray(mockData.warehouse) ? mockData.warehouse : [];
@@ -1771,21 +1775,16 @@
                 }
             }
             
-            // Mock data for admin panel - ГАРАНТИРОВАННАЯ ИНИЦИАЛИЗАЦИЯ
-            let mockData;
-            
             // Инициализация данных при загрузке
             function initializeData() {
                 mockData = loadData();
                 console.log('🎯 Данные инициализированы:', mockData);
                 
-                // Гарантируем что все поля существуют
                 if (!mockData.members) mockData.members = [];
                 if (!mockData.events) mockData.events = [];
                 if (!mockData.warehouse) mockData.warehouse = [];
                 if (!mockData.requests) mockData.requests = [];
                 
-                // Немедленно сохраняем структуру
                 saveData();
             }
     
@@ -1843,7 +1842,7 @@
                 updateStats();
             }
             
-            // Populate table with data - УЛУЧШЕННАЯ ВЕРСИЯ
+            // Populate table with data
             function populateTable(tableId, data, type) {
                 const table = document.getElementById(tableId);
                 if (!table) {
@@ -1851,7 +1850,6 @@
                     return;
                 }
                 
-                // Гарантируем что data является массивом
                 if (!Array.isArray(data)) {
                     console.error('Invalid data for table:', tableId, data);
                     data = [];
@@ -1869,7 +1867,6 @@
                 data.forEach(item => {
                     const row = document.createElement('tr');
                     
-                    // Add columns based on type
                     if (type === 'member') {
                         row.innerHTML = `
                             <td>${item.id}</td>
@@ -1904,7 +1901,6 @@
                         `;
                     }
                     
-                    // Add action buttons
                     const actionsCell = document.createElement('td');
                     actionsCell.className = 'action-buttons';
                     
@@ -1945,11 +1941,10 @@
                 });
             }
             
-            // Delete item - УЛУЧШЕННАЯ ВЕРСИЯ
+            // Delete item
             function deleteItem(type, id) {
                 console.log('🗑️ Удаление:', type, 'ID:', id, 'Данные:', mockData[type]);
                 
-                // Проверяем что данные существуют
                 if (!mockData[type] || !Array.isArray(mockData[type])) {
                     console.error('Data not found for type:', type);
                     alert('Ошибка: данные не найдены');
@@ -1978,7 +1973,7 @@
                 return false;
             }
             
-            // Handle request actions - УЛУЧШЕННАЯ ВЕРСИЯ
+            // Handle request actions
             function handleRequestAction(requestId, action) {
                 if (!mockData.requests || !Array.isArray(mockData.requests)) {
                     alert('Ошибка: данные заявок не найдены');
@@ -2161,18 +2156,16 @@
                 return `${year}-${month}-${day}T${hours}:${minutes}`;
             }
             
-            // Save item - УЛУЧШЕННАЯ ВЕРСИЯ
+            // Save item
             function saveItem(type, id) {
                 console.log('🔄 Сохранение:', type, 'ID:', id, 'Текущие данные:', mockData[type]);
                 
                 try {
-                    // Гарантируем что данные существуют
                     if (!mockData[type] || !Array.isArray(mockData[type])) {
                         console.log('📝 Создаем новый массив для:', type);
                         mockData[type] = [];
                     }
                     
-                    // Получаем значения из формы
                     let formData = {};
                     
                     if (type === 'member') {
@@ -2230,10 +2223,8 @@
                     }
                     
                     if (id) {
-                        // Редактирование существующего элемента
                         const index = mockData[type].findIndex(item => item.id === id);
                         if (index !== -1) {
-                            // Сохраняем ID и обновляем данные
                             mockData[type][index] = {
                                 id: id,
                                 ...formData
@@ -2244,7 +2235,6 @@
                             return false;
                         }
                     } else {
-                        // Добавление нового элемента
                         const newId = mockData[type].length > 0 
                             ? Math.max(...mockData[type].map(item => item.id)) + 1 
                             : 1;
@@ -2258,12 +2248,10 @@
                         console.log('✅ Добавлен новый элемент:', newItem);
                     }
                     
-                    // Обновляем интерфейс
                     populateTable(`${type}Table`, mockData[type], type);
                     updateStats();
                     if (adminModal) adminModal.style.display = 'none';
                     
-                    // Синхронное сохранение
                     const saved = saveData();
                     if (saved) {
                         alert(id ? '✅ Изменения сохранены!' : '✅ Элемент добавлен!');
@@ -2464,7 +2452,7 @@
                 });
             }
             
-            // Event Listeners - с проверками на существование элементов
+            // Event Listeners
             
             // Auth tabs
             authTabs.forEach(tab => {
@@ -2500,14 +2488,16 @@
                             successMessage.textContent = 'Успешный вход!';
                             successMessage.style.display = 'block';
                             setTimeout(() => {
-                                successMessage.style.display = 'none';
+                                if (successMessage) successMessage.style.display = 'none';
                             }, 3000);
                         }
+                    } else {
+                        alert('Пожалуйста, заполните все поля!');
                     }
                 });
             }
             
-            // Register form
+            // Register form - ИСПРАВЛЕННАЯ РЕГИСТРАЦИЯ
             if (registerForm) {
                 registerForm.addEventListener('submit', (e) => {
                     e.preventDefault();
@@ -2515,22 +2505,32 @@
                     const password = document.getElementById('registerPassword')?.value;
                     const confirmPassword = document.getElementById('registerConfirmPassword')?.value;
                     
+                    if (!username || !password || !confirmPassword) {
+                        alert('Пожалуйста, заполните все поля!');
+                        return;
+                    }
+                    
                     if (password !== confirmPassword) {
                         alert('Пароли не совпадают!');
                         return;
                     }
                     
                     if (username && password) {
+                        // Показываем сообщение об успехе
                         if (successMessage) {
                             successMessage.textContent = 'Регистрация успешна! Теперь войдите в систему.';
                             successMessage.style.display = 'block';
-                            
-                            setTimeout(() => {
-                                successMessage.style.display = 'none';
-                                const loginTab = document.getElementById('loginTab');
-                                if (loginTab) loginTab.click();
-                            }, 3000);
                         }
+                        
+                        // Очищаем форму
+                        registerForm.reset();
+                        
+                        // Автоматически переключаем на вкладку входа через 2 секунды
+                        setTimeout(() => {
+                            if (successMessage) successMessage.style.display = 'none';
+                            const loginTab = document.querySelector('[data-tab="login"]');
+                            if (loginTab) loginTab.click();
+                        }, 2000);
                     }
                 });
             }
@@ -2577,10 +2577,6 @@
             }
             
             // Add buttons for each section
-            const addMemberBtn = document.getElementById('addMemberBtn');
-            const addEventBtn = document.getElementById('addEventBtn');
-            const addWarehouseBtn = document.getElementById('addWarehouseBtn');
-            
             if (addMemberBtn) {
                 addMemberBtn.addEventListener('click', () => {
                     openEditModal('member');
@@ -2738,7 +2734,6 @@
             }
             
             // Back to main from admin
-            const backToMain = document.getElementById('backToMain');
             if (backToMain) {
                 backToMain.addEventListener('click', () => {
                     if (adminPanel) adminPanel.style.display = 'none';
@@ -2747,7 +2742,7 @@
             }
     
             // Initialize
-            initializeData(); // Инициализируем данные ДО всего
+            initializeData();
             updateUI();
             initializeClanMembersModal();
             initializeEventsModal();
@@ -2755,7 +2750,6 @@
             
             console.log('🚀 Система клана МВД инициализирована');
             console.log('💾 Данные загружены:', mockData);
-            console.log('🔍 localStorage содержит:', localStorage.getItem('clanMVDData'));
         });
     </script>
 </body>
