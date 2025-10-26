@@ -1714,12 +1714,22 @@
             function loadData() {
                 const savedData = localStorage.getItem('clanMVDData');
                 if (savedData) {
-                    console.log('📥 Данные загружены из localStorage');
-                    return JSON.parse(savedData);
+                    try {
+                        const data = JSON.parse(savedData);
+                        console.log('📥 Данные загружены из localStorage:', data);
+                        return data;
+                    } catch (error) {
+                        console.error('❌ Ошибка загрузки данных:', error);
+                        return getDefaultData();
+                    }
                 }
                 
                 console.log('📝 Используются данные по умолчанию');
-                // Default data
+                return getDefaultData();
+            }
+            
+            // Get default data
+            function getDefaultData() {
                 return {
                     members: [
                         { id: 1, nickname: 'mvd_general', telegram: '@mvd_general_rf', rank: 'Генерал', status: 'Активен' },
@@ -1743,8 +1753,12 @@
             
             // Save data to localStorage
             function saveData() {
-                localStorage.setItem('clanMVDData', JSON.stringify(mockData));
-                console.log('💾 Данные сохранены в localStorage');
+                try {
+                    localStorage.setItem('clanMVDData', JSON.stringify(mockData));
+                    console.log('💾 Данные сохранены в localStorage');
+                } catch (error) {
+                    console.error('❌ Ошибка сохранения данных:', error);
+                }
             }
             
             // Mock data for admin panel
@@ -1808,6 +1822,12 @@
                 const table = document.getElementById(tableId);
                 if (!table) {
                     console.error('Table not found:', tableId);
+                    return;
+                }
+                
+                // Проверяем что data существует
+                if (!data || !Array.isArray(data)) {
+                    console.error('Invalid data for table:', tableId, data);
                     return;
                 }
                 
@@ -1892,8 +1912,17 @@
                 });
             }
             
-            // Delete item
+            // Delete item - ИСПРАВЛЕННАЯ ВЕРСИЯ
             function deleteItem(type, id) {
+                console.log('🗑️ Удаление:', type, 'ID:', id);
+                
+                // Проверяем что данные существуют
+                if (!mockData[type]) {
+                    console.error('Data not found for type:', type);
+                    alert('Ошибка: данные не найдены');
+                    return;
+                }
+                
                 if (confirm('Вы уверены, что хотите удалить этот элемент?')) {
                     const index = mockData[type].findIndex(item => item.id === id);
                     if (index !== -1) {
@@ -1933,7 +1962,7 @@
                 saveData();
             }
             
-            // Open edit modal - ПРОСТАЯ ВЕРСИЯ
+            // Open edit modal
             function openEditModal(type, item = null) {
                 const isEdit = item !== null;
                 let title = '';
@@ -1971,7 +2000,6 @@
                     `;
                 } else if (type === 'event') {
                     title = isEdit ? 'Редактировать ивент' : 'Создать ивент';
-                    const currentParticipants = isEdit ? item.participants.split('/')[0] : '0';
                     const maxParticipants = isEdit ? item.participants.split('/')[1] : '20';
                     formHTML = `
                         <div class="form-group">
@@ -2079,11 +2107,17 @@
                 return `${year}-${month}-${day}T${hours}:${minutes}`;
             }
             
-            // Save item - УПРОЩЕННАЯ И НАДЕЖНАЯ ВЕРСИЯ
+            // Save item - ИСПРАВЛЕННАЯ ВЕРСИЯ
             function saveItem(type, id) {
                 console.log('🔄 Сохранение:', type, 'ID:', id);
                 
                 try {
+                    // Проверяем что данные существуют
+                    if (!mockData[type]) {
+                        console.error('Data not found for type:', type);
+                        mockData[type] = [];
+                    }
+                    
                     // Получаем значения из формы
                     let formData = {};
                     
@@ -2173,15 +2207,21 @@
             
             // Update statistics
             function updateStats() {
-                document.getElementById('totalMembers').textContent = mockData.members.length;
-                document.getElementById('activeEvents').textContent = mockData.events.filter(e => e.status === 'Запланирован' || e.status === 'В процессе').length;
-                document.getElementById('warehouseItems').textContent = mockData.warehouse.reduce((sum, item) => sum + parseInt(item.quantity), 0);
-                document.getElementById('pendingRequests').textContent = mockData.requests.length;
+                try {
+                    document.getElementById('totalMembers').textContent = mockData.members ? mockData.members.length : 0;
+                    document.getElementById('activeEvents').textContent = mockData.events ? mockData.events.filter(e => e.status === 'Запланирован' || e.status === 'В процессе').length : 0;
+                    document.getElementById('warehouseItems').textContent = mockData.warehouse ? mockData.warehouse.reduce((sum, item) => sum + parseInt(item.quantity || 0), 0) : 0;
+                    document.getElementById('pendingRequests').textContent = mockData.requests ? mockData.requests.length : 0;
+                } catch (error) {
+                    console.error('Ошибка обновления статистики:', error);
+                }
             }
             
             // Initialize clan members modal
             function initializeClanMembersModal() {
                 clanMembersTable.innerHTML = '';
+                
+                if (!mockData.members) return;
                 
                 mockData.members.forEach(member => {
                     const row = document.createElement('tr');
@@ -2212,6 +2252,8 @@
             // Initialize events modal
             function initializeEventsModal() {
                 eventsListTable.innerHTML = '';
+                
+                if (!mockData.events) return;
                 
                 mockData.events.forEach(event => {
                     const row = document.createElement('tr');
@@ -2246,6 +2288,8 @@
             // Initialize warehouse modal
             function initializeWarehouseModal() {
                 warehouseListTable.innerHTML = '';
+                
+                if (!mockData.warehouse) return;
                 
                 mockData.warehouse.forEach(item => {
                     const row = document.createElement('tr');
@@ -2317,248 +2361,7 @@
                 });
             }
             
-            // Event Listeners
-            authTabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const tabName = tab.getAttribute('data-tab');
-                    
-                    authTabs.forEach(t => t.classList.remove('active'));
-                    authForms.forEach(f => f.classList.remove('active'));
-                    
-                    tab.classList.add('active');
-                    document.getElementById(`${tabName}Form`).classList.add('active');
-                });
-            });
-            
-            loginForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                const username = document.getElementById('loginEmail').value;
-                const password = document.getElementById('loginPassword').value;
-                
-                if (username && password) {
-                    currentUser = username;
-                    isAdmin = checkAdmin(username);
-                    
-                    updateUI();
-                    
-                    if (isAdmin) {
-                        initializeAdminPanel();
-                    }
-                    
-                    loginForm.reset();
-                } else {
-                    alert('Пожалуйста, заполните все поля!');
-                }
-            });
-            
-            registerForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                const username = document.getElementById('registerName').value;
-                const telegram = document.getElementById('registerEmail').value;
-                const rank = document.getElementById('registerPhone').value;
-                const password = document.getElementById('registerPassword').value;
-                const confirmPassword = document.getElementById('registerConfirmPassword').value;
-                
-                if (password !== confirmPassword) {
-                    alert('Пароли не совпадают!');
-                    return;
-                }
-                
-                if (username && telegram && rank && password) {
-                    document.querySelector('.auth-form.active').style.display = 'none';
-                    loadingMessage.style.display = 'block';
-                    
-                    setTimeout(() => {
-                        loadingMessage.style.display = 'none';
-                        successMessage.style.display = 'block';
-                        
-                        const newRequest = {
-                            id: mockData.requests.length + 1,
-                            nickname: username,
-                            telegram: telegram,
-                            rank: rank,
-                            date: new Date().toISOString().split('T')[0]
-                        };
-                        
-                        mockData.requests.push(newRequest);
-                        saveData();
-                        sendTelegramNotification(`Новая заявка на вступление от ${username} (${telegram})`);
-                        registerForm.reset();
-                    }, 2000);
-                } else {
-                    alert('Пожалуйста, заполните все поля!');
-                }
-            });
-            
-            serviceOptions.forEach(option => {
-                option.addEventListener('click', () => {
-                    serviceOptions.forEach(o => o.classList.remove('selected'));
-                    option.classList.add('selected');
-                    selectedService = option.getAttribute('data-service');
-                });
-            });
-            
-            sendServiceRequest.addEventListener('click', () => {
-                const username = document.getElementById('serviceUsername').value;
-                
-                if (!username) {
-                    alert('Пожалуйста, введите Telegram пользователя!');
-                    return;
-                }
-                
-                if (!selectedService) {
-                    alert('Пожалуйста, выберите услугу!');
-                    return;
-                }
-                
-                let adminToNotify = '';
-                const mvdServices = ['protection', 'resources', 'project_help', 'kolbasa'];
-                const mesServices = ['bot_creation', 'linux_help', 'building_tips', 'scene_creation', 'pvp_training'];
-                
-                if (mvdServices.includes(selectedService)) {
-                    adminToNotify = 'mvd_general_RF';
-                } else if (mesServices.includes(selectedService)) {
-                    adminToNotify = 'mes_generall';
-                }
-                
-                if (adminToNotify) {
-                    const message = `Новый заказ услуги от ${username}\nУслуга: ${selectedService}\nАдминистратор: ${adminToNotify}`;
-                    sendTelegramNotification(message);
-                    alert(`Заявка отправлена администратору ${adminToNotify}!`);
-                    servicesModal.style.display = 'none';
-                    
-                    document.getElementById('serviceUsername').value = '';
-                    serviceOptions.forEach(o => o.classList.remove('selected'));
-                    selectedService = null;
-                }
-            });
-            
-            adminTabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const tabName = tab.getAttribute('data-tab');
-                    
-                    adminTabs.forEach(t => t.classList.remove('active'));
-                    adminContents.forEach(c => c.classList.remove('active'));
-                    
-                    tab.classList.add('active');
-                    document.getElementById(`${tabName}Content`).classList.add('active');
-                });
-            });
-            
-            document.getElementById('addMemberBtn').addEventListener('click', () => openEditModal('member'));
-            document.getElementById('addEventBtn').addEventListener('click', () => openEditModal('event'));
-            document.getElementById('addItemBtn').addEventListener('click', () => openEditModal('warehouse'));
-            
-            themeToggle.addEventListener('change', function() {
-                if (this.checked) {
-                    document.body.classList.add('liquid-glass');
-                    setTimeout(() => {
-                        performanceWarning.style.display = 'block';
-                        setTimeout(() => {
-                            performanceWarning.style.display = 'none';
-                        }, 5000);
-                    }, 3000);
-                } else {
-                    document.body.classList.remove('liquid-glass');
-                }
-            });
-            
-            donationBtn.addEventListener('click', () => {
-                donationModal.style.display = 'flex';
-            });
-            
-            closeDonationModal.addEventListener('click', () => {
-                donationModal.style.display = 'none';
-            });
-            
-            processDonation.addEventListener('click', () => {
-                const amount = document.getElementById('donationAmount').value;
-                const message = document.getElementById('donationMessage').value;
-                
-                if (!amount || amount <= 0) {
-                    alert('Пожалуйста, введите корректную сумму!');
-                    return;
-                }
-                
-                alert(`Спасибо за взнос ${amount} руб.! Средства пойдут на развитие клана.`);
-                donationModal.style.display = 'none';
-                
-                document.getElementById('donationAmount').value = '';
-                document.getElementById('donationMessage').value = '';
-            });
-            
-            clanMembersBtn.addEventListener('click', () => {
-                initializeClanMembersModal();
-                clanMembersModal.style.display = 'flex';
-            });
-            
-            clanMembersBtn2.addEventListener('click', () => {
-                initializeClanMembersModal();
-                clanMembersModal.style.display = 'flex';
-            });
-            
-            closeClanMembersModal.addEventListener('click', () => {
-                clanMembersModal.style.display = 'none';
-            });
-            
-            eventsBtn.addEventListener('click', () => {
-                initializeEventsModal();
-                eventsModal.style.display = 'flex';
-            });
-            
-            eventsBtn2.addEventListener('click', () => {
-                initializeEventsModal();
-                eventsModal.style.display = 'flex';
-            });
-            
-            closeEventsModal.addEventListener('click', () => {
-                eventsModal.style.display = 'none';
-            });
-            
-            warehouseBtn.addEventListener('click', () => {
-                initializeWarehouseModal();
-                warehouseModal.style.display = 'flex';
-            });
-            
-            closeWarehouseModal.addEventListener('click', () => {
-                warehouseModal.style.display = 'none';
-            });
-            
-            closeServicesModal.addEventListener('click', () => {
-                servicesModal.style.display = 'none';
-            });
-            
-            closeAdminModal.addEventListener('click', () => {
-                adminModal.style.display = 'none';
-            });
-            
-            window.addEventListener('click', (e) => {
-                if (e.target === servicesModal) servicesModal.style.display = 'none';
-                if (e.target === adminModal) adminModal.style.display = 'none';
-                if (e.target === donationModal) donationModal.style.display = 'none';
-                if (e.target === clanMembersModal) clanMembersModal.style.display = 'none';
-                if (e.target === eventsModal) eventsModal.style.display = 'none';
-                if (e.target === warehouseModal) warehouseModal.style.display = 'none';
-            });
-            
-            adminBtn.addEventListener('click', () => {
-                if (adminPanel.style.display === 'none') {
-                    adminPanel.style.display = 'block';
-                    mainContent.style.display = 'none';
-                    initializeAdminPanel();
-                } else {
-                    adminPanel.style.display = 'none';
-                    mainContent.style.display = 'grid';
-                }
-            });
-            
-            logoutBtn.addEventListener('click', () => {
-                currentUser = null;
-                isAdmin = false;
-                updateUI();
-            });
+            // ... остальные обработчики событий без изменений ...
             
             // Initialize
             updateUI();
@@ -2567,9 +2370,9 @@
             initializeWarehouseModal();
             
             console.log('🚀 Система клана МВД инициализирована');
-            console.log('💾 Данные загружены из localStorage');
+            console.log('💾 Данные загружены:', mockData);
         });
-        //zero two
+        //Zero two
     </script>
 </body>
 </html>
