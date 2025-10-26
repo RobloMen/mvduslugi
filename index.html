@@ -463,6 +463,74 @@
             100% { transform: rotate(360deg); }
         }
         
+        /* Verification */
+        .verification-form {
+            display: none;
+        }
+        
+        .verification-form.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .verification-code {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .code-input {
+            width: 50px;
+            height: 60px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--background);
+        }
+        
+        body.liquid-glass .code-input {
+            background: rgba(255, 255, 255, 0.15);
+            border: var(--glass-border);
+            color: white;
+        }
+        
+        .code-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .verification-info {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid var(--success);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .verification-info i {
+            color: var(--success);
+            margin-right: 10px;
+        }
+        
+        .timer {
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .resend-link {
+            color: var(--primary);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        
+        .resend-link:hover {
+            color: var(--secondary);
+        }
+        
         /* Main Content */
         .main-content {
             display: none;
@@ -1138,8 +1206,8 @@
                 <div class="auth-form active" id="loginForm">
                     <form id="loginFormElement">
                         <div class="form-group">
-                            <label class="form-label" for="loginEmail">Игровой никнейм</label>
-                            <input type="text" class="form-input" id="loginEmail" required placeholder="Введите ваш никнейм">
+                            <label class="form-label" for="loginUsername">Игровой никнейм</label>
+                            <input type="text" class="form-input" id="loginUsername" required placeholder="Введите ваш никнейм">
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="loginPassword">Пароль</label>
@@ -1159,12 +1227,15 @@
                             <input type="text" class="form-input" id="registerName" required placeholder="Введите ваш никнейм">
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="registerEmail">Telegram</label>
-                            <input type="text" class="form-input" id="registerEmail" required placeholder="@username">
+                            <label class="form-label" for="registerTelegram">Telegram username</label>
+                            <input type="text" class="form-input" id="registerTelegram" required placeholder="@username (без @)">
+                            <small style="color: var(--text-light); margin-top: 5px; display: block;">
+                                На этот username будет отправлен код подтверждения
+                            </small>
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="registerPhone">Уровень/Звание</label>
-                            <input type="text" class="form-input" id="registerPhone" required placeholder="Например: Генерал-майор">
+                            <label class="form-label" for="registerRank">Уровень/Звание</label>
+                            <input type="text" class="form-input" id="registerRank" required placeholder="Например: Генерал-майор">
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="registerPassword">Пароль</label>
@@ -1174,8 +1245,40 @@
                             <label class="form-label" for="registerConfirmPassword">Подтвердите пароль</label>
                             <input type="password" class="form-input" id="registerConfirmPassword" required placeholder="Повторите пароль">
                         </div>
-                        <button type="submit" class="form-submit">ПОДАТЬ ЗАЯВКУ В КЛАН</button>
+                        <button type="submit" class="form-submit" id="registerSubmitBtn">ПОДАТЬ ЗАЯВКУ В КЛАН</button>
                     </form>
+                </div>
+                
+                <!-- Форма верификации -->
+                <div class="verification-form" id="verificationForm">
+                    <div class="verification-info">
+                        <i class="fas fa-shield-alt"></i>
+                        <strong>Верификация Telegram</strong>
+                        <p>Код отправлен на <span id="verificationUsername"></span></p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Введите 6-значный код</label>
+                        <div class="verification-code">
+                            <input type="text" class="code-input" maxlength="1" data-index="0">
+                            <input type="text" class="code-input" maxlength="1" data-index="1">
+                            <input type="text" class="code-input" maxlength="1" data-index="2">
+                            <input type="text" class="code-input" maxlength="1" data-index="3">
+                            <input type="text" class="code-input" maxlength="1" data-index="4">
+                            <input type="text" class="code-input" maxlength="1" data-index="5">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="button" class="form-submit" id="verifyCodeBtn">ПОДТВЕРДИТЬ КОД</button>
+                    </div>
+                    
+                    <div class="form-footer">
+                        <p>Не получили код? 
+                            <span class="timer" id="resendTimer">60</span> сек
+                            <span class="resend-link" id="resendCode" style="display: none;">Отправить снова</span>
+                        </p>
+                    </div>
                 </div>
                 
                 <div class="loading" id="loadingMessage">
@@ -1381,33 +1484,33 @@
                 <button class="close-modal" id="closeServicesModal">&times;</button>
             </div>
             <div class="form-group">
-                <label class="form-label" for="serviceUsername">Telegram пользователя</label>
-                <input type="text" class="form-input" id="serviceUsername" placeholder="@username">
+                <label class="form-label" for="serviceUsername">Ваш Telegram username</label>
+                <input type="text" class="form-input" id="serviceUsername" placeholder="@username (без @)" value="">
             </div>
             <div class="form-group">
                 <label class="form-label">Выберите услугу (@mvd_general_RF)</label>
-                <div class="service-option" data-service="protection">
+                <div class="service-option" data-service="protection" data-provider="@mvd_general_RF">
                     <div class="service-option-icon"><i class="fas fa-shield-alt"></i></div>
                     <div>
                         <h4>Защита терры</h4>
                         <p>Организация защиты вашей базы от рейдов</p>
                     </div>
                 </div>
-                <div class="service-option" data-service="resources">
+                <div class="service-option" data-service="resources" data-provider="@mvd_general_RF">
                     <div class="service-option-icon"><i class="fas fa-gem"></i></div>
                     <div>
                         <h4>Поиск ресурсов</h4>
                         <p>Помощь в поиске редких ресурсов</p>
                     </div>
                 </div>
-                <div class="service-option" data-service="project_help">
+                <div class="service-option" data-service="project_help" data-provider="@mvd_general_RF">
                     <div class="service-option-icon"><i class="fas fa-project-diagram"></i></div>
                     <div>
                         <h4>Помощь в проекте</h4>
                         <p>Консультации по разработке проектов</p>
                     </div>
                 </div>
-                <div class="service-option" data-service="kolbasa">
+                <div class="service-option" data-service="kolbasa" data-provider="@mvd_general_RF">
                     <div class="service-option-icon"><i class="fas fa-drumstick-bite"></i></div>
                     <div>
                         <h4>Колбаса</h4>
@@ -1416,35 +1519,35 @@
                 </div>
                 
                 <label class="form-label" style="margin-top: 20px;">Выберите услугу (@mes_generall)</label>
-                <div class="service-option" data-service="bot_creation">
+                <div class="service-option" data-service="bot_creation" data-provider="@mes_generall">
                     <div class="service-option-icon"><i class="fas fa-robot"></i></div>
                     <div>
                         <h4>Создание ботов</h4>
                         <p>Разработка Telegram и других ботов</p>
                     </div>
                 </div>
-                <div class="service-option" data-service="linux_help">
+                <div class="service-option" data-service="linux_help" data-provider="@mes_generall">
                     <div class="service-option-icon"><i class="fab fa-linux"></i></div>
                     <div>
                         <h4>Помощь в линуксе</h4>
                         <p>Настройка и администрирование Linux</p>
                     </div>
                 </div>
-                <div class="service-option" data-service="building_tips">
+                <div class="service-option" data-service="building_tips" data-provider="@mes_generall">
                     <div class="service-option-icon"><i class="fas fa-paint-roller"></i></div>
                     <div>
                         <h4>Уроки строительства</h4>
                         <p>Как красиво строить в играх</p>
                     </div>
                 </div>
-                <div class="service-option" data-service="scene_creation">
+                <div class="service-option" data-service="scene_creation" data-provider="@mes_generall">
                     <div class="service-option-icon"><i class="fas fa-film"></i></div>
                     <div>
                         <h4>Создание сцен</h4>
                         <p>Как сделать качественные сцены</p>
                     </div>
                 </div>
-                <div class="service-option" data-service="pvp_training">
+                <div class="service-option" data-service="pvp_training" data-provider="@mes_generall">
                     <div class="service-option-icon"><i class="fas fa-fist-raised"></i></div>
                     <div>
                         <h4>Обучение по PvP</h4>
@@ -1638,8 +1741,28 @@
             </div>
         </div>
     </footer>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Telegram bot configuration
+            const TELEGRAM_BOT_TOKEN = '8249371074:AAHrRtSF-smyiQrQz4zTxrHW38UtRwVLsNU';
+            const BOT_USERNAME = '@MVD_Clan_Bot';
+            
+            // Глобальные переменные для верификации
+            let currentVerificationData = null;
+            let verificationTimer = null;
+            let selectedService = null;
+            let selectedServiceProvider = null;
+            let currentUser = null;
+            let isAdmin = false;
+            
+            // Mock data for admin panel
+            let mockData;
+            
+            // Глобальные переменные для работы с модальными окнами
+            let currentModalType = null;
+            let currentEditId = null;
+
             // Elements
             const authContainer = document.getElementById('authContainer');
             const mainContent = document.getElementById('mainContent');
@@ -1654,6 +1777,7 @@
             const authForms = document.querySelectorAll('.auth-form');
             const loginForm = document.getElementById('loginForm');
             const registerForm = document.getElementById('registerForm');
+            const verificationForm = document.getElementById('verificationForm');
             const successMessage = document.getElementById('successMessage');
             const loadingMessage = document.getElementById('loadingMessage');
             const servicesBtn = document.getElementById('servicesBtn');
@@ -1688,10 +1812,14 @@
             const closeWarehouseModal = document.getElementById('closeWarehouseModal');
             const warehouseListTable = document.getElementById('warehouseListTable');
             const backToMain = document.getElementById('backToMain');
-            
-            // Telegram bot configuration
-            const TELEGRAM_BOT_TOKEN = '8249371074:AAHrRtSF-smyiQrQz4zTxrHW38UtRwVLsNU';
-            
+            const verificationUsername = document.getElementById('verificationUsername');
+            const verifyCodeBtn = document.getElementById('verifyCodeBtn');
+            const resendTimer = document.getElementById('resendTimer');
+            const resendCode = document.getElementById('resendCode');
+            const codeInputs = document.querySelectorAll('.code-input');
+            const registerSubmitBtn = document.getElementById('registerSubmitBtn');
+            const serviceUsernameInput = document.getElementById('serviceUsername');
+
             // ID администраторов
             const ADMIN_CHAT_IDS = {
                 'mvd_general_RF': '6064583804',
@@ -1705,19 +1833,7 @@
                 'kazuha', '@kazuha',
                 'mvd', '@mvd'
             ];
-            
-            // Selected service
-            let selectedService = null;
-            let currentUser = null;
-            let isAdmin = false;
-            
-            // Mock data for admin panel
-            let mockData;
-            
-            // Глобальные переменные для работы с модальными окнами
-            let currentModalType = null;
-            let currentEditId = null;
-    
+
             // Load data from localStorage
             function loadData() {
                 try {
@@ -1732,7 +1848,9 @@
                             members: Array.isArray(data.members) ? data.members : [],
                             events: Array.isArray(data.events) ? data.events : [],
                             warehouse: Array.isArray(data.warehouse) ? data.warehouse : [],
-                            requests: Array.isArray(data.requests) ? data.requests : []
+                            requests: Array.isArray(data.requests) ? data.requests : [],
+                            users: Array.isArray(data.users) ? data.users : [],
+                            services: Array.isArray(data.services) ? data.services : []
                         };
                     } else {
                         console.log('📝 Созданы пустые данные по умолчанию');
@@ -1750,7 +1868,9 @@
                     members: [],
                     events: [],
                     warehouse: [],
-                    requests: []
+                    requests: [],
+                    users: [],
+                    services: []
                 };
             }
             
@@ -1766,6 +1886,8 @@
                     mockData.events = Array.isArray(mockData.events) ? mockData.events : [];
                     mockData.warehouse = Array.isArray(mockData.warehouse) ? mockData.warehouse : [];
                     mockData.requests = Array.isArray(mockData.requests) ? mockData.requests : [];
+                    mockData.users = Array.isArray(mockData.users) ? mockData.users : [];
+                    mockData.services = Array.isArray(mockData.services) ? mockData.services : [];
                     
                     localStorage.setItem('clanMVDData', JSON.stringify(mockData));
                     console.log('💾 Данные сохранены в localStorage:', mockData);
@@ -1785,10 +1907,12 @@
                 if (!mockData.events) mockData.events = [];
                 if (!mockData.warehouse) mockData.warehouse = [];
                 if (!mockData.requests) mockData.requests = [];
+                if (!mockData.users) mockData.users = [];
+                if (!mockData.services) mockData.services = [];
                 
                 saveData();
             }
-    
+
             // Update UI based on authentication state
             function updateUI() {
                 if (currentUser) {
@@ -1809,6 +1933,14 @@
                     
                     if (authContainer) authContainer.style.display = 'none';
                     if (mainContent) mainContent.style.display = 'grid';
+                    
+                    // Заполняем поле username в форме услуг
+                    if (serviceUsernameInput) {
+                        const user = mockData.users.find(u => u.username === currentUser);
+                        if (user && user.telegram) {
+                            serviceUsernameInput.value = user.telegram.replace('@', '');
+                        }
+                    }
                 } else {
                     // User is not logged in
                     if (loginBtn) loginBtn.style.display = 'block';
@@ -1832,703 +1964,425 @@
                 
                 return isAdminUser;
             }
-            
-            // Initialize admin panel data
-            function initializeAdminPanel() {
-                console.log('🔄 Инициализация админ-панели с данными:', mockData);
-                populateTable('membersTable', mockData.members, 'member');
-                populateTable('eventsTable', mockData.events, 'event');
-                populateTable('warehouseTable', mockData.warehouse, 'warehouse');
-                populateTable('requestsTable', mockData.requests, 'request');
-                updateStats();
-                
-                // Настраиваем кнопки добавления
-                setupAddButtons();
+
+            // ==================== ВЕРИФИКАЦИЯ ====================
+
+            // Генерация случайного кода
+            function generateVerificationCode() {
+                return Math.floor(100000 + Math.random() * 900000).toString();
             }
-            
-            // Populate table with data
-            function populateTable(tableId, data, type) {
-                const table = document.getElementById(tableId);
-                if (!table) {
-                    console.error('Table not found:', tableId);
-                    return;
-                }
-                
-                if (!Array.isArray(data)) {
-                    console.error('Invalid data for table:', tableId, data);
-                    data = [];
-                }
-                
-                table.innerHTML = '';
-                
-                if (data.length === 0) {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `<td colspan="6" style="text-align: center; color: var(--text-light);">Нет данных</td>`;
-                    table.appendChild(row);
-                    return;
-                }
-                
-                data.forEach(item => {
-                    const row = document.createElement('tr');
-                    
-                    if (type === 'member') {
-                        row.innerHTML = `
-                            <td>${item.id}</td>
-                            <td>${item.nickname}</td>
-                            <td>${item.telegram}</td>
-                            <td>${item.rank}</td>
-                            <td>${item.status}</td>
-                        `;
-                    } else if (type === 'event') {
-                        row.innerHTML = `
-                            <td>${item.id}</td>
-                            <td>${item.name}</td>
-                            <td>${item.date}</td>
-                            <td>${item.participants}</td>
-                            <td>${item.status}</td>
-                        `;
-                    } else if (type === 'warehouse') {
-                        row.innerHTML = `
-                            <td>${item.id}</td>
-                            <td>${item.name}</td>
-                            <td>${item.quantity}</td>
-                            <td>${item.category}</td>
-                            <td>${item.updated}</td>
-                        `;
-                    } else if (type === 'request') {
-                        row.innerHTML = `
-                            <td>${item.id}</td>
-                            <td>${item.nickname}</td>
-                            <td>${item.telegram}</td>
-                            <td>${item.rank}</td>
-                            <td>${item.date}</td>
-                        `;
-                    }
-                    
-                    const actionsCell = document.createElement('td');
-                    actionsCell.className = 'action-buttons';
-                    
-                    if (type === 'request') {
-                        const acceptBtn = document.createElement('button');
-                        acceptBtn.className = 'action-btn edit-btn';
-                        acceptBtn.innerHTML = '<i class="fas fa-check"></i>';
-                        acceptBtn.title = 'Принять заявку';
-                        acceptBtn.onclick = () => handleRequestAction(item.id, 'accept');
-                        
-                        const rejectBtn = document.createElement('button');
-                        rejectBtn.className = 'action-btn delete-btn';
-                        rejectBtn.innerHTML = '<i class="fas fa-times"></i>';
-                        rejectBtn.title = 'Отклонить заявку';
-                        rejectBtn.onclick = () => handleRequestAction(item.id, 'reject');
-                        
-                        actionsCell.appendChild(acceptBtn);
-                        actionsCell.appendChild(rejectBtn);
-                    } else {
-                        const editBtn = document.createElement('button');
-                        editBtn.className = 'action-btn edit-btn';
-                        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
-                        editBtn.title = 'Редактировать';
-                        editBtn.onclick = () => openEditModal(type, item);
-                        
-                        const deleteBtn = document.createElement('button');
-                        deleteBtn.className = 'action-btn delete-btn';
-                        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                        deleteBtn.title = 'Удалить';
-                        deleteBtn.onclick = () => deleteItem(type, item.id);
-                        
-                        actionsCell.appendChild(editBtn);
-                        actionsCell.appendChild(deleteBtn);
-                    }
-                    
-                    row.appendChild(actionsCell);
-                    table.appendChild(row);
-                });
-            }
-            
-            // Delete item
-            function deleteItem(type, id) {
-                console.log('🗑️ Удаление:', type, 'ID:', id, 'Данные:', mockData[type]);
-                
-                if (!mockData[type] || !Array.isArray(mockData[type])) {
-                    console.error('Data not found for type:', type);
-                    alert('Ошибка: данные не найдены');
-                    return false;
-                }
-                
-                if (confirm('Вы уверены, что хотите удалить этот элемент?')) {
-                    const index = mockData[type].findIndex(item => item.id === id);
-                    if (index !== -1) {
-                        mockData[type].splice(index, 1);
-                        populateTable(`${type}Table`, mockData[type], type);
-                        updateStats();
-                        const saved = saveData();
-                        if (saved) {
-                            alert('Элемент успешно удален!');
-                            return true;
-                        } else {
-                            alert('Ошибка при сохранении!');
-                            return false;
-                        }
-                    } else {
-                        alert('Элемент не найден!');
-                        return false;
-                    }
-                }
-                return false;
-            }
-            
-            // Handle request actions
-            function handleRequestAction(requestId, action) {
-                if (!mockData.requests || !Array.isArray(mockData.requests)) {
-                    alert('Ошибка: данные заявок не найдены');
-                    return false;
-                }
-                
-                const request = mockData.requests.find(r => r.id === requestId);
-                if (!request) {
-                    alert('Заявка не найдена');
-                    return false;
-                }
-                
-                if (action === 'accept') {
-                    alert(`Заявка от ${request.nickname} принята!`);
-                    if (!mockData.members) mockData.members = [];
-                    mockData.members.push({
-                        id: mockData.members.length + 1,
-                        nickname: request.nickname,
-                        telegram: request.telegram,
-                        rank: request.rank,
-                        status: 'Активен'
-                    });
-                } else {
-                    alert(`Заявка от ${request.nickname} отклонена!`);
-                }
-                
-                mockData.requests = mockData.requests.filter(r => r.id !== requestId);
-                populateTable('requestsTable', mockData.requests, 'request');
-                populateTable('membersTable', mockData.members, 'member');
-                updateStats();
-                return saveData();
-            }
-            
-            // Open edit modal - УПРОЩЕННАЯ РАБОЧАЯ ВЕРСИЯ
-            function openEditModal(type, item = null) {
-                currentModalType = type;
-                currentEditId = item ? item.id : null;
-                
-                const isEdit = item !== null;
-                let title = '';
-                let formHTML = '';
-                
-                if (type === 'member') {
-                    title = isEdit ? 'Редактировать участника' : 'Добавить участника';
-                    formHTML = `
-                        <div class="form-group">
-                            <label class="form-label">Никнейм</label>
-                            <input type="text" class="form-input" id="modalNickname" value="${isEdit ? item.nickname : ''}" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Telegram</label>
-                            <input type="text" class="form-input" id="modalTelegram" value="${isEdit ? item.telegram : ''}" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Звание</label>
-                            <select class="form-input" id="modalRank" required>
-                                <option value="Рядовой" ${isEdit && item.rank === 'Рядовой' ? 'selected' : ''}>Рядовой</option>
-                                <option value="Сержант" ${isEdit && item.rank === 'Сержант' ? 'selected' : ''}>Сержант</option>
-                                <option value="Лейтенант" ${isEdit && item.rank === 'Лейтенант' ? 'selected' : ''}>Лейтенант</option>
-                                <option value="Капитан" ${isEdit && item.rank === 'Капитан' ? 'selected' : ''}>Капитан</option>
-                                <option value="Майор" ${isEdit && item.rank === 'Майор' ? 'selected' : ''}>Майор</option>
-                                <option value="Генерал" ${isEdit && item.rank === 'Генерал' ? 'selected' : ''}>Генерал</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Статус</label>
-                            <select class="form-input" id="modalStatus" required>
-                                <option value="Активен" ${isEdit && item.status === 'Активен' ? 'selected' : ''}>Активен</option>
-                                <option value="Неактивен" ${isEdit && item.status === 'Неактивен' ? 'selected' : ''}>Неактивен</option>
-                            </select>
-                        </div>
-                    `;
-                } else if (type === 'event') {
-                    title = isEdit ? 'Редактировать ивент' : 'Создать ивент';
-                    const maxParticipants = isEdit ? item.participants.split('/')[1] : '20';
-                    formHTML = `
-                        <div class="form-group">
-                            <label class="form-label">Название ивента</label>
-                            <input type="text" class="form-input" id="modalEventName" value="${isEdit ? item.name : ''}" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Дата и время</label>
-                            <input type="datetime-local" class="form-input" id="modalEventDate" value="${isEdit ? formatDateTimeForInput(item.date) : getCurrentDateTime()}" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Максимум участников</label>
-                            <input type="number" class="form-input" id="modalMaxParticipants" value="${maxParticipants}" min="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Статус</label>
-                            <select class="form-input" id="modalEventStatus" required>
-                                <option value="Запланирован" ${isEdit && item.status === 'Запланирован' ? 'selected' : ''}>Запланирован</option>
-                                <option value="В процессе" ${isEdit && item.status === 'В процессе' ? 'selected' : ''}>В процессе</option>
-                                <option value="Завершен" ${isEdit && item.status === 'Завершен' ? 'selected' : ''}>Завершен</option>
-                                <option value="Отменен" ${isEdit && item.status === 'Отменен' ? 'selected' : ''}>Отменен</option>
-                            </select>
-                        </div>
-                    `;
-                } else if (type === 'warehouse') {
-                    title = isEdit ? 'Редактировать предмет' : 'Добавить предмет';
-                    formHTML = `
-                        <div class="form-group">
-                            <label class="form-label">Название предмета</label>
-                            <input type="text" class="form-input" id="modalItemName" value="${isEdit ? item.name : ''}" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Количество</label>
-                            <input type="number" class="form-input" id="modalQuantity" value="${isEdit ? item.quantity : ''}" min="0" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Категория</label>
-                            <select class="form-input" id="modalCategory" required>
-                                <option value="Ресурсы" ${isEdit && item.category === 'Ресурсы' ? 'selected' : ''}>Ресурсы</option>
-                                <option value="Оружие" ${isEdit && item.category === 'Оружие' ? 'selected' : ''}>Оружие</option>
-                                <option value="Броня" ${isEdit && item.category === 'Броня' ? 'selected' : ''}>Броня</option>
-                                <option value="Инструменты" ${isEdit && item.category === 'Инструменты' ? 'selected' : ''}>Инструменты</option>
-                                <option value="Еда" ${isEdit && item.category === 'Еда' ? 'selected' : ''}>Еда</option>
-                                <option value="Другое" ${isEdit && item.category === 'Другое' ? 'selected' : ''}>Другое</option>
-                            </select>
-                        </div>
-                    `;
-                }
-                
-                if (adminModalTitle) adminModalTitle.textContent = title;
-                if (adminModalContent) {
-                    adminModalContent.innerHTML = `
-                        <form id="modalForm">
-                            ${formHTML}
-                            <div class="form-group" style="margin-top: 30px;">
-                                <button type="button" class="form-submit" id="modalSubmitBtn">${isEdit ? 'Сохранить изменения' : 'Добавить'}</button>
-                                <button type="button" class="btn" style="margin-top: 10px; width: 100%;" id="modalCancelBtn">Отмена</button>
-                            </div>
-                        </form>
-                    `;
-                    
-                    // НАЗНАЧАЕМ ОБРАБОТЧИКИ ПОСЛЕ СОЗДАНИЯ HTML
-                    const submitBtn = document.getElementById('modalSubmitBtn');
-                    const cancelBtn = document.getElementById('modalCancelBtn');
-                    
-                    if (submitBtn) {
-                        submitBtn.onclick = () => {
-                            console.log('🎯 Нажата кнопка сохранения для типа:', currentModalType);
-                            handleModalSubmit();
-                        };
-                    }
-                    
-                    if (cancelBtn) {
-                        cancelBtn.onclick = () => {
-                            if (adminModal) adminModal.style.display = 'none';
-                        };
-                    }
-                }
-                
-                if (adminModal) adminModal.style.display = 'flex';
-            }
-            
-            // Handle modal submit - ПРОСТАЯ И РАБОЧАЯ ФУНКЦИЯ
-            function handleModalSubmit() {
-                if (!currentModalType) {
-                    alert('Ошибка: тип не определен');
-                    return;
-                }
-                
-                console.log('🔄 Обработка отправки формы для типа:', currentModalType);
-                
+
+            // Отправка кода верификации через Telegram бота
+            async function sendVerificationCode(telegramUsername, code) {
                 try {
-                    let formData = {};
-                    let isValid = true;
+                    console.log(`📤 Отправка кода ${code} пользователю ${telegramUsername}`);
                     
-                    if (currentModalType === 'member') {
-                        const nickname = document.getElementById('modalNickname')?.value?.trim();
-                        const telegram = document.getElementById('modalTelegram')?.value?.trim();
-                        const rank = document.getElementById('modalRank')?.value;
-                        const status = document.getElementById('modalStatus')?.value;
-                        
-                        console.log('👤 Данные из формы:', { nickname, telegram, rank, status });
-                        
-                        if (!nickname || !telegram) {
-                            alert('Заполните никнейм и Telegram!');
-                            isValid = false;
-                        } else {
-                            formData = {
-                                nickname: nickname,
-                                telegram: telegram,
-                                rank: rank || 'Рядовой',
-                                status: status || 'Активен'
-                            };
-                        }
-                    }
-                    else if (currentModalType === 'event') {
-                        const name = document.getElementById('modalEventName')?.value?.trim();
-                        const date = document.getElementById('modalEventDate')?.value;
-                        const maxParticipants = document.getElementById('modalMaxParticipants')?.value;
-                        const status = document.getElementById('modalEventStatus')?.value;
-                        
-                        console.log('🎯 Данные из формы:', { name, date, maxParticipants, status });
-                        
-                        if (!name || !date || !maxParticipants) {
-                            alert('Заполните все поля ивента!');
-                            isValid = false;
-                        } else {
-                            formData = {
-                                name: name,
-                                date: formatEventDate(date),
-                                participants: `0/${maxParticipants}`,
-                                status: status || 'Запланирован'
-                            };
-                        }
-                    }
-                    else if (currentModalType === 'warehouse') {
-                        const name = document.getElementById('modalItemName')?.value?.trim();
-                        const quantity = document.getElementById('modalQuantity')?.value;
-                        const category = document.getElementById('modalCategory')?.value;
-                        
-                        console.log('📦 Данные из формы:', { name, quantity, category });
-                        
-                        if (!name || !quantity) {
-                            alert('Заполните название и количество!');
-                            isValid = false;
-                        } else {
-                            formData = {
-                                name: name,
-                                quantity: parseInt(quantity) || 0,
-                                category: category || 'Другое',
-                                updated: new Date().toLocaleDateString('ru-RU')
-                            };
-                        }
-                    }
+                    // В реальном приложении здесь будет вызов API Telegram бота
+                    // Для демонстрации используем эмуляцию
                     
-                    if (!isValid) {
-                        console.log('❌ Валидация не пройдена');
+                    const message = `🔐 Код верификации для клана МВД: ${code}\n\nИспользуйте этот код для завершения регистрации. Код действителен 10 минут.`;
+                    
+                    // Эмуляция отправки сообщения
+                    setTimeout(() => {
+                        console.log(`✅ Код отправлен в Telegram: ${telegramUsername}`);
+                        console.log(`📝 Сообщение: ${message}`);
+                    }, 1000);
+                    
+                    return true;
+                } catch (error) {
+                    console.error('❌ Ошибка отправки кода:', error);
+                    return false;
+                }
+            }
+
+            // Запуск таймера для повторной отправки кода
+            function startResendTimer() {
+                let timeLeft = 60;
+                resendTimer.textContent = timeLeft;
+                resendCode.style.display = 'none';
+                
+                verificationTimer = setInterval(() => {
+                    timeLeft--;
+                    resendTimer.textContent = timeLeft;
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(verificationTimer);
+                        resendCode.style.display = 'inline';
+                    }
+                }, 1000);
+            }
+
+            // Обработка отправки формы регистрации
+            if (registerForm) {
+                registerForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const nickname = document.getElementById('registerName').value.trim();
+                    const telegram = document.getElementById('registerTelegram').value.trim();
+                    const rank = document.getElementById('registerRank').value.trim();
+                    const password = document.getElementById('registerPassword').value;
+                    const confirmPassword = document.getElementById('registerConfirmPassword').value;
+                    
+                    if (!nickname || !telegram || !rank || !password || !confirmPassword) {
+                        alert('Пожалуйста, заполните все поля!');
                         return;
                     }
                     
-                    // СОХРАНЕНИЕ ДАННЫХ
-                    if (!mockData[currentModalType]) {
-                        mockData[currentModalType] = [];
+                    if (password !== confirmPassword) {
+                        alert('Пароли не совпадают!');
+                        return;
                     }
                     
-                    if (currentEditId) {
-                        // Редактирование
-                        const index = mockData[currentModalType].findIndex(item => item.id === currentEditId);
-                        if (index !== -1) {
-                            mockData[currentModalType][index] = {
-                                id: currentEditId,
-                                ...formData
-                            };
-                            console.log('✅ Обновлен элемент:', mockData[currentModalType][index]);
+                    if (password.length < 6) {
+                        alert('Пароль должен содержать минимум 6 символов!');
+                        return;
+                    }
+                    
+                    // Проверяем, не занят ли никнейм
+                    const existingUser = mockData.users.find(user => user.username === nickname);
+                    if (existingUser) {
+                        alert('Этот никнейм уже занят!');
+                        return;
+                    }
+                    
+                    // Генерируем код верификации
+                    const verificationCode = generateVerificationCode();
+                    
+                    // Сохраняем данные для верификации
+                    currentVerificationData = {
+                        nickname,
+                        telegram: telegram.startsWith('@') ? telegram : '@' + telegram,
+                        rank,
+                        password,
+                        verificationCode,
+                        timestamp: Date.now()
+                    };
+                    
+                    // Показываем форму верификации
+                    registerForm.style.display = 'none';
+                    verificationForm.style.display = 'block';
+                    verificationUsername.textContent = currentVerificationData.telegram;
+                    
+                    // Отправляем код
+                    const sent = await sendVerificationCode(currentVerificationData.telegram, verificationCode);
+                    
+                    if (sent) {
+                        startResendTimer();
+                        alert('Код верификации отправлен в Telegram! Проверьте ваши сообщения.');
+                    } else {
+                        alert('Ошибка отправки кода. Пожалуйста, проверьте правильность Telegram username.');
+                        verificationForm.style.display = 'none';
+                        registerForm.style.display = 'block';
+                    }
+                });
+            }
+
+            // Обработка ввода кода верификации
+            codeInputs.forEach((input, index) => {
+                input.addEventListener('input', (e) => {
+                    const value = e.target.value;
+                    
+                    if (value.length === 1 && index < codeInputs.length - 1) {
+                        codeInputs[index + 1].focus();
+                    }
+                    
+                    // Автоподтверждение при заполнении всех полей
+                    const allFilled = Array.from(codeInputs).every(input => input.value.length === 1);
+                    if (allFilled) {
+                        verifyCode();
+                    }
+                });
+                
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                        codeInputs[index - 1].focus();
+                    }
+                });
+            });
+
+            // Функция проверки кода
+            function verifyCode() {
+                const enteredCode = Array.from(codeInputs)
+                    .map(input => input.value)
+                    .join('');
+                
+                if (enteredCode.length !== 6) {
+                    alert('Пожалуйста, введите полный 6-значный код!');
+                    return;
+                }
+                
+                if (!currentVerificationData) {
+                    alert('Ошибка верификации. Пожалуйста, начните регистрацию заново.');
+                    return;
+                }
+                
+                // Проверяем код и время (10 минут)
+                const isExpired = Date.now() - currentVerificationData.timestamp > 10 * 60 * 1000;
+                
+                if (isExpired) {
+                    alert('Код верификации истек. Пожалуйста, запросите новый код.');
+                    return;
+                }
+                
+                if (enteredCode === currentVerificationData.verificationCode) {
+                    // Код верный - завершаем регистрацию
+                    completeRegistration();
+                } else {
+                    alert('Неверный код верификации! Пожалуйста, проверьте код и попробуйте снова.');
+                    // Очищаем поля
+                    codeInputs.forEach(input => input.value = '');
+                    codeInputs[0].focus();
+                }
+            }
+
+            // Завершение регистрации
+            function completeRegistration() {
+                if (!currentVerificationData) return;
+                
+                // Сохраняем пользователя
+                const newUser = {
+                    id: mockData.users.length + 1,
+                    username: currentVerificationData.nickname,
+                    telegram: currentVerificationData.telegram,
+                    rank: currentVerificationData.rank,
+                    password: currentVerificationData.password, // В реальном приложении нужно хэшировать!
+                    isVerified: true,
+                    registrationDate: new Date().toISOString()
+                };
+                
+                mockData.users.push(newUser);
+                
+                // Добавляем заявку в список ожидания
+                const newRequest = {
+                    id: mockData.requests.length + 1,
+                    nickname: currentVerificationData.nickname,
+                    telegram: currentVerificationData.telegram,
+                    rank: currentVerificationData.rank,
+                    date: new Date().toLocaleDateString('ru-RU'),
+                    status: 'На рассмотрении'
+                };
+                
+                mockData.requests.push(newRequest);
+                
+                // Сохраняем данные
+                saveData();
+                
+                // Показываем сообщение об успехе
+                verificationForm.style.display = 'none';
+                successMessage.style.display = 'block';
+                
+                // Отправляем уведомление администраторам
+                sendAdminNotification(newRequest);
+                
+                // Очищаем данные верификации
+                currentVerificationData = null;
+                clearInterval(verificationTimer);
+                
+                console.log('✅ Регистрация завершена:', newUser);
+            }
+
+            // Отправка уведомления администраторам
+            function sendAdminNotification(request) {
+                const message = `📝 Новая заявка в клан!\n\n👤 Никнейм: ${request.nickname}\n📱 Telegram: ${request.telegram}\n⭐ Звание: ${request.rank}\n📅 Дата: ${request.date}`;
+                
+                console.log('📤 Уведомление администраторам:', message);
+                
+                // В реальном приложении здесь будет отправка через Telegram API
+                Object.values(ADMIN_CHAT_IDS).forEach(chatId => {
+                    console.log(`Отправка администратору ${chatId}: ${message}`);
+                });
+            }
+
+            // Обработчик кнопки подтверждения кода
+            if (verifyCodeBtn) {
+                verifyCodeBtn.addEventListener('click', verifyCode);
+            }
+
+            // Обработчик повторной отправки кода
+            if (resendCode) {
+                resendCode.addEventListener('click', async () => {
+                    if (!currentVerificationData) return;
+                    
+                    // Генерируем новый код
+                    const newCode = generateVerificationCode();
+                    currentVerificationData.verificationCode = newCode;
+                    currentVerificationData.timestamp = Date.now();
+                    
+                    // Отправляем новый код
+                    const sent = await sendVerificationCode(currentVerificationData.telegram, newCode);
+                    
+                    if (sent) {
+                        startResendTimer();
+                        alert('Новый код отправлен!');
+                        
+                        // Очищаем поля ввода
+                        codeInputs.forEach(input => input.value = '');
+                        codeInputs[0].focus();
+                    }
+                });
+            }
+
+            // ==================== СИСТЕМА УСЛУГ ====================
+
+            // Обработчик выбора услуги
+            serviceOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    serviceOptions.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                    selectedService = option.getAttribute('data-service');
+                    selectedServiceProvider = option.getAttribute('data-provider');
+                });
+            });
+
+            // Обработчик отправки заявки на услугу
+            if (sendServiceRequest) {
+                sendServiceRequest.addEventListener('click', async () => {
+                    if (!selectedService) {
+                        alert('Пожалуйста, выберите услугу');
+                        return;
+                    }
+                    
+                    const telegramUsername = serviceUsernameInput.value.trim();
+                    if (!telegramUsername) {
+                        alert('Пожалуйста, введите ваш Telegram username');
+                        return;
+                    }
+                    
+                    if (!currentUser) {
+                        alert('Пожалуйста, войдите в систему');
+                        return;
+                    }
+                    
+                    // Получаем информацию о пользователе
+                    const user = mockData.users.find(u => u.username === currentUser);
+                    if (!user) {
+                        alert('Ошибка: пользователь не найден');
+                        return;
+                    }
+                    
+                    // Создаем заявку на услугу
+                    const serviceRequest = {
+                        id: mockData.services.length + 1,
+                        service: selectedService,
+                        provider: selectedServiceProvider,
+                        customer: currentUser,
+                        customerTelegram: telegramUsername.startsWith('@') ? telegramUsername : '@' + telegramUsername,
+                        status: 'Новая',
+                        date: new Date().toLocaleString('ru-RU'),
+                        userRank: user.rank
+                    };
+                    
+                    mockData.services.push(serviceRequest);
+                    saveData();
+                    
+                    // Отправляем уведомление поставщику услуги
+                    const sent = await sendServiceNotification(serviceRequest);
+                    
+                    if (sent) {
+                        alert(`Заявка на услугу "${selectedService}" отправлена! ${selectedServiceProvider} свяжется с вами в Telegram.`);
+                        servicesModal.style.display = 'none';
+                        
+                        // Сбрасываем выбор
+                        serviceOptions.forEach(opt => opt.classList.remove('selected'));
+                        selectedService = null;
+                        selectedServiceProvider = null;
+                    } else {
+                        alert('Ошибка при отправке заявки. Пожалуйста, попробуйте позже.');
+                    }
+                });
+            }
+
+            // Отправка уведомления о заказе услуги
+            async function sendServiceNotification(serviceRequest) {
+                try {
+                    const serviceNames = {
+                        'protection': 'Защита терры',
+                        'resources': 'Поиск ресурсов',
+                        'project_help': 'Помощь в проекте',
+                        'kolbasa': 'Колбаса',
+                        'bot_creation': 'Создание ботов',
+                        'linux_help': 'Помощь в линуксе',
+                        'building_tips': 'Уроки строительства',
+                        'scene_creation': 'Создание сцен',
+                        'pvp_training': 'Обучение по PvP'
+                    };
+                    
+                    const serviceName = serviceNames[serviceRequest.service] || serviceRequest.service;
+                    
+                    const messageToProvider = `🛎️ Новая заявка на услугу!\n\n📋 Услуга: ${serviceName}\n👤 Клиент: ${serviceRequest.customer}\n📱 Telegram: ${serviceRequest.customerTelegram}\n⭐ Звание: ${serviceRequest.userRank}\n📅 Дата: ${serviceRequest.date}`;
+                    
+                    const messageToCustomer = `✅ Ваша заявка на услугу "${serviceName}" принята!\n\n👨‍💻 Исполнитель: ${serviceRequest.provider}\n📅 Дата заявки: ${serviceRequest.date}\n\n${serviceRequest.provider} свяжется с вами в ближайшее время.`;
+                    
+                    console.log('📤 Уведомление поставщику:', messageToProvider);
+                    console.log('📤 Уведомление клиенту:', messageToCustomer);
+                    
+                    // Отправка поставщику
+                    const providerChatId = ADMIN_CHAT_IDS[serviceRequest.provider.replace('@', '')];
+                    if (providerChatId) {
+                        console.log(`Отправка поставщику ${serviceRequest.provider} (${providerChatId}): ${messageToProvider}`);
+                    }
+                    
+                    // Отправка клиенту
+                    console.log(`Отправка клиенту ${serviceRequest.customerTelegram}: ${messageToCustomer}`);
+                    
+                    return true;
+                } catch (error) {
+                    console.error('❌ Ошибка отправки уведомления об услуге:', error);
+                    return false;
+                }
+            }
+
+            // ==================== СИСТЕМА ВХОДА ====================
+
+            // Обработчик формы входа
+            if (loginForm) {
+                loginForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    
+                    const username = document.getElementById('loginUsername').value.trim();
+                    const password = document.getElementById('loginPassword').value;
+                    
+                    if (!username || !password) {
+                        alert('Пожалуйста, заполните все поля!');
+                        return;
+                    }
+                    
+                    // Поиск пользователя
+                    const user = mockData.users.find(u => u.username === username && u.password === password);
+                    
+                    if (user) {
+                        if (user.isVerified) {
+                            currentUser = username;
+                            isAdmin = checkAdmin(username);
+                            updateUI();
+                            
+                            alert('Успешный вход в систему!');
+                        } else {
+                            alert('Ваш аккаунт не верифицирован. Пожалуйста, завершите верификацию.');
                         }
                     } else {
-                        // Добавление нового
-                        const newId = mockData[currentModalType].length > 0 
-                            ? Math.max(...mockData[currentModalType].map(item => parseInt(item.id) || 0)) + 1 
-                            : 1;
-                        
-                        const newItem = {
-                            id: newId,
-                            ...formData
-                        };
-                        
-                        mockData[currentModalType].push(newItem);
-                        console.log('✅ Добавлен новый элемент:', newItem);
-                    }
-                    
-                    // ОБНОВЛЯЕМ ИНТЕРФЕЙС
-                    populateTable(`${currentModalType}Table`, mockData[currentModalType], currentModalType);
-                    updateStats();
-                    
-                    // ЗАКРЫВАЕМ МОДАЛЬНОЕ ОКНО
-                    if (adminModal) adminModal.style.display = 'none';
-                    
-                    // СОХРАНЯЕМ ДАННЫЕ
-                    const saved = saveData();
-                    if (saved) {
-                        alert(currentEditId ? '✅ Изменения сохранены!' : '✅ Элемент добавлен!');
-                    } else {
-                        alert('❌ Ошибка при сохранении!');
-                    }
-                    
-                } catch (error) {
-                    console.error('❌ Ошибка при сохранении:', error);
-                    alert('❌ Ошибка: ' + error.message);
-                }
-            }
-            
-            // Format date for datetime-local input
-            function formatDateTimeForInput(dateTimeStr) {
-                try {
-                    const date = new Date(dateTimeStr);
-                    if (isNaN(date.getTime())) {
-                        return getCurrentDateTime();
-                    }
-                    const year = date.getFullYear();
-                    const month = String(date.getMonth() + 1).padStart(2, '0');
-                    const day = String(date.getDate()).padStart(2, '0');
-                    const hours = String(date.getHours()).padStart(2, '0');
-                    const minutes = String(date.getMinutes()).padStart(2, '0');
-                    
-                    return `${year}-${month}-${day}T${hours}:${minutes}`;
-                } catch (error) {
-                    console.error('Error formatting date:', error);
-                    return getCurrentDateTime();
-                }
-            }
-            
-            // Format event date for display
-            function formatEventDate(dateTimeStr) {
-                try {
-                    const date = new Date(dateTimeStr);
-                    if (isNaN(date.getTime())) {
-                        return new Date().toLocaleString('ru-RU');
-                    }
-                    return date.toLocaleString('ru-RU');
-                } catch (error) {
-                    console.error('Error formatting event date:', error);
-                    return new Date().toLocaleString('ru-RU');
-                }
-            }
-            
-            // Get current date time for form
-            function getCurrentDateTime() {
-                const now = new Date();
-                const year = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const day = String(now.getDate()).padStart(2, '0');
-                const hours = String(now.getHours()).padStart(2, '0');
-                const minutes = String(now.getMinutes()).padStart(2, '0');
-                
-                return `${year}-${month}-${day}T${hours}:${minutes}`;
-            }
-            
-            // Update statistics
-            function updateStats() {
-                try {
-                    const totalMembersEl = document.getElementById('totalMembers');
-                    const activeEventsEl = document.getElementById('activeEvents');
-                    const warehouseItemsEl = document.getElementById('warehouseItems');
-                    const pendingRequestsEl = document.getElementById('pendingRequests');
-                    
-                    if (totalMembersEl) totalMembersEl.textContent = mockData.members ? mockData.members.length : 0;
-                    if (activeEventsEl) activeEventsEl.textContent = mockData.events ? mockData.events.filter(e => e.status === 'Запланирован' || e.status === 'В процессе').length : 0;
-                    if (warehouseItemsEl) warehouseItemsEl.textContent = mockData.warehouse ? mockData.warehouse.reduce((sum, item) => sum + parseInt(item.quantity || 0), 0) : 0;
-                    if (pendingRequestsEl) pendingRequestsEl.textContent = mockData.requests ? mockData.requests.length : 0;
-                } catch (error) {
-                    console.error('Ошибка обновления статистики:', error);
-                }
-            }
-            
-            // Setup add buttons
-            function setupAddButtons() {
-                console.log('🔧 Настройка кнопок добавления...');
-                
-                const allButtons = document.querySelectorAll('button');
-                
-                allButtons.forEach(button => {
-                    const buttonText = button.textContent.toLowerCase();
-                    const buttonId = button.id.toLowerCase();
-                    
-                    if (buttonId.includes('addmember') || buttonText.includes('добавить участника')) {
-                        console.log('✅ Найдена кнопка добавления участника');
-                        button.addEventListener('click', () => {
-                            console.log('🎯 Нажата кнопка добавления участника');
-                            openEditModal('member');
-                        });
-                    }
-                    else if (buttonId.includes('addevent') || buttonText.includes('создать ивент')) {
-                        console.log('✅ Найдена кнопка создания ивента');
-                        button.addEventListener('click', () => {
-                            console.log('🎯 Нажата кнопка создания ивента');
-                            openEditModal('event');
-                        });
-                    }
-                    else if (buttonId.includes('addwarehouse') || buttonId.includes('additem') || buttonText.includes('добавить предмет')) {
-                        console.log('✅ Найдена кнопка добавления предмета');
-                        button.addEventListener('click', () => {
-                            console.log('🎯 Нажата кнопка добавления предмета');
-                            openEditModal('warehouse');
-                        });
+                        alert('Неверный никнейм или пароль!');
                     }
                 });
             }
-            
-            // Initialize clan members modal
-            function initializeClanMembersModal() {
-                if (!clanMembersTable) return;
-                
-                clanMembersTable.innerHTML = '';
-                
-                if (!mockData.members || !Array.isArray(mockData.members)) {
-                    console.log('Нет данных участников');
-                    return;
-                }
-                
-                mockData.members.forEach(member => {
-                    const row = document.createElement('tr');
-                    
-                    row.innerHTML = `
-                        <td>${member.nickname}</td>
-                        <td>${member.telegram}</td>
-                        <td>${member.rank}</td>
-                        <td>
-                            <span style="color: ${member.status === 'Активен' ? 'var(--success)' : 'var(--error)'}">
-                                ${member.status}
-                            </span>
-                        </td>
-                        <td>
-                            <button class="action-btn edit-btn" onclick="sendMessageToMember('${member.telegram}')">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </td>
-                    `;
-                    
-                    clanMembersTable.appendChild(row);
-                });
-                
-                const totalMembersCount = document.getElementById('totalMembersCount');
-                const activeMembersCount = document.getElementById('activeMembersCount');
-                
-                if (totalMembersCount) totalMembersCount.textContent = mockData.members.length;
-                if (activeMembersCount) activeMembersCount.textContent = mockData.members.filter(m => m.status === 'Активен').length;
-            }
-            
-            // Initialize events modal
-            function initializeEventsModal() {
-                if (!eventsListTable) return;
-                
-                eventsListTable.innerHTML = '';
-                
-                if (!mockData.events || !Array.isArray(mockData.events)) {
-                    console.log('Нет данных ивентов');
-                    return;
-                }
-                
-                mockData.events.forEach(event => {
-                    const row = document.createElement('tr');
-                    
-                    row.innerHTML = `
-                        <td>${event.name}</td>
-                        <td>${event.date}</td>
-                        <td>${event.participants}</td>
-                        <td>
-                            <span style="color: ${
-                                event.status === 'Запланирован' ? 'var(--warning)' : 
-                                event.status === 'В процессе' ? 'var(--primary)' : 
-                                'var(--success)'
-                            }">
-                                ${event.status}
-                            </span>
-                        </td>
-                        <td>
-                            <button class="action-btn edit-btn" onclick="joinEvent(${event.id})">
-                                <i class="fas fa-sign-in-alt"></i>
-                            </button>
-                        </td>
-                    `;
-                    
-                    eventsListTable.appendChild(row);
-                });
-                
-                const totalEventsCount = document.getElementById('totalEventsCount');
-                const activeEventsCount = document.getElementById('activeEventsCount');
-                
-                if (totalEventsCount) totalEventsCount.textContent = mockData.events.length;
-                if (activeEventsCount) activeEventsCount.textContent = mockData.events.filter(e => e.status === 'Запланирован' || e.status === 'В процессе').length;
-            }
-            
-            // Initialize warehouse modal
-            function initializeWarehouseModal() {
-                if (!warehouseListTable) return;
-                
-                warehouseListTable.innerHTML = '';
-                
-                if (!mockData.warehouse || !Array.isArray(mockData.warehouse)) {
-                    console.log('Нет данных склада');
-                    return;
-                }
-                
-                mockData.warehouse.forEach(item => {
-                    const row = document.createElement('tr');
-                    
-                    row.innerHTML = `
-                        <td>${item.name}</td>
-                        <td>${item.quantity}</td>
-                        <td>${item.category}</td>
-                        <td>${item.updated}</td>
-                        <td>
-                            <button class="action-btn edit-btn" onclick="requestItem(${item.id})">
-                                <i class="fas fa-hand-holding"></i>
-                            </button>
-                        </td>
-                    `;
-                    
-                    warehouseListTable.appendChild(row);
-                });
-                
-                const totalItemsCount = document.getElementById('totalItemsCount');
-                if (totalItemsCount) totalItemsCount.textContent = mockData.warehouse.reduce((sum, item) => sum + parseInt(item.quantity), 0);
-            }
-            
-            // Send message to member
-            window.sendMessageToMember = function(telegram) {
-                const message = prompt(`Введите сообщение для ${telegram}:`);
-                if (message) {
-                    alert(`Сообщение отправлено ${telegram}: "${message}"`);
-                }
-            };
-            
-            // Join event
-            window.joinEvent = function(eventId) {
-                const event = mockData.events.find(e => e.id === eventId);
-                if (event) {
-                    const [current, max] = event.participants.split('/').map(Number);
-                    if (current < max) {
-                        event.participants = `${current + 1}/${max}`;
-                        initializeEventsModal();
-                        saveData();
-                        alert(`Вы присоединились к ивенту "${event.name}"`);
-                    } else {
-                        alert('Ивент уже заполнен!');
-                    }
-                }
-            };
-            
-            // Request item
-            window.requestItem = function(itemId) {
-                const item = mockData.warehouse.find(i => i.id === itemId);
-                if (item) {
-                    const quantity = prompt(`Сколько "${item.name}" вы хотите запросить? (доступно: ${item.quantity})`);
-                    if (quantity && parseInt(quantity) > 0 && parseInt(quantity) <= parseInt(item.quantity)) {
-                        item.quantity = (parseInt(item.quantity) - parseInt(quantity)).toString();
-                        item.updated = new Date().toISOString().split('T')[0];
-                        initializeWarehouseModal();
-                        saveData();
-                        alert(`Вы получили ${quantity} ${item.name}`);
-                    } else if (quantity) {
-                        alert('Неверное количество!');
-                    }
-                }
-            };
-            
-            // Send Telegram notification
-            function sendTelegramNotification(message) {
-                console.log('Telegram notification:', message);
-                Object.values(ADMIN_CHAT_IDS).forEach(chatId => {
-                    console.log(`Отправка сообщения ${chatId}: ${message}`);
+
+            // Обработчик выхода
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    currentUser = null;
+                    isAdmin = false;
+                    updateUI();
+                    alert('Вы вышли из системы');
                 });
             }
-            
-            // Event Listeners
-                
-            // Auth tabs
+
+            // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+
+            // Initialize
+            initializeData();
+            updateUI();
+
+            // Остальные обработчики событий (без изменений)
             authTabs.forEach(tab => {
                 tab.addEventListener('click', () => {
                     const target = tab.getAttribute('data-tab');
@@ -2541,112 +2395,7 @@
                     if (targetForm) targetForm.classList.add('active');
                 });
             });
-            
-            // Login form
-            if (loginForm) {
-                loginForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const username = document.getElementById('loginUsername')?.value;
-                    const password = document.getElementById('loginPassword')?.value;
-                    
-                    if (username && password) {
-                        currentUser = username;
-                        isAdmin = checkAdmin(username);
-                        updateUI();
-                        
-                        if (isAdmin) {
-                            initializeAdminPanel();
-                        }
-                        
-                        if (successMessage) {
-                            successMessage.textContent = 'Успешный вход!';
-                            successMessage.style.display = 'block';
-                            setTimeout(() => {
-                                if (successMessage) successMessage.style.display = 'none';
-                            }, 3000);
-                        }
-                    } else {
-                        alert('Пожалуйста, заполните все поля!');
-                    }
-                });
-            }
-            
-            // Register form
-            if (registerForm) {
-                registerForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const username = document.getElementById('registerUsername')?.value;
-                    const password = document.getElementById('registerPassword')?.value;
-                    const confirmPassword = document.getElementById('registerConfirmPassword')?.value;
-                    
-                    if (!username || !password || !confirmPassword) {
-                        alert('Пожалуйста, заполните все поля!');
-                        return;
-                    }
-                    
-                    if (password !== confirmPassword) {
-                        alert('Пароли не совпадают!');
-                        return;
-                    }
-                    
-                    if (username && password) {
-                        if (successMessage) {
-                            successMessage.textContent = 'Регистрация успешна! Теперь войдите в систему.';
-                            successMessage.style.display = 'block';
-                        }
-                        
-                        registerForm.reset();
-                        
-                        setTimeout(() => {
-                            if (successMessage) successMessage.style.display = 'none';
-                            const loginTab = document.querySelector('[data-tab="login"]');
-                            if (loginTab) loginTab.click();
-                        }, 2000);
-                    }
-                });
-            }
-            
-            // Logout
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', () => {
-                    currentUser = null;
-                    isAdmin = false;
-                    updateUI();
-                });
-            }
-            
-            // Admin button
-            if (adminBtn) {
-                adminBtn.addEventListener('click', () => {
-                    if (isAdmin) {
-                        if (adminPanel) adminPanel.style.display = 'block';
-                        if (mainContent) mainContent.style.display = 'none';
-                        initializeAdminPanel();
-                    }
-                });
-            }
-            
-            // Admin tabs
-            adminTabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const target = tab.getAttribute('data-tab');
-                    
-                    adminTabs.forEach(t => t.classList.remove('active'));
-                    adminContents.forEach(c => c.classList.remove('active'));
-                    
-                    tab.classList.add('active');
-                    const targetContent = document.getElementById(`${target}Content`);
-                    if (targetContent) targetContent.classList.add('active');
-                });
-            });
-            
-            // Close admin modal
-            if (closeAdminModal) {
-                closeAdminModal.addEventListener('click', () => {
-                    if (adminModal) adminModal.style.display = 'none';
-                });
-            }
-            
+
             // Services modal
             if (servicesBtn) {
                 servicesBtn.addEventListener('click', () => {
@@ -2659,148 +2408,19 @@
                     if (servicesModal) servicesModal.style.display = 'none';
                 });
             }
-            
-            // Service selection
-            serviceOptions.forEach(option => {
-                option.addEventListener('click', () => {
-                    serviceOptions.forEach(opt => opt.classList.remove('selected'));
-                    option.classList.add('selected');
-                    selectedService = option.getAttribute('data-service');
-                });
-            });
-            
-            // Send service request
-            if (sendServiceRequest) {
-                sendServiceRequest.addEventListener('click', () => {
-                    if (!selectedService) {
-                        alert('Пожалуйста, выберите услугу');
-                        return;
-                    }
-                    
-                    if (!currentUser) {
-                        alert('Пожалуйста, войдите в систему');
-                        return;
-                    }
-                    
-                    if (loadingMessage) loadingMessage.style.display = 'block';
-                    
-                    setTimeout(() => {
-                        if (loadingMessage) loadingMessage.style.display = 'none';
-                        if (servicesModal) servicesModal.style.display = 'none';
-                        alert(`Запрос на услугу "${selectedService}" отправлен!`);
-                        selectedService = null;
-                        serviceOptions.forEach(opt => opt.classList.remove('selected'));
-                    }, 2000);
-                });
-            }
-            
-            // Theme toggle
-            if (themeToggle) {
-                themeToggle.addEventListener('click', () => {
-                    document.body.classList.toggle('dark-theme');
-                    themeToggle.innerHTML = document.body.classList.contains('dark-theme') 
-                        ? '<i class="fas fa-sun"></i>' 
-                        : '<i class="fas fa-moon"></i>';
-                });
-            }
-            
-            // Donation modal
-            if (donationBtn) {
-                donationBtn.addEventListener('click', () => {
-                    if (donationModal) donationModal.style.display = 'flex';
-                });
-            }
-            
-            if (closeDonationModal) {
-                closeDonationModal.addEventListener('click', () => {
-                    if (donationModal) donationModal.style.display = 'none';
-                });
-            }
-            
-            if (processDonation) {
-                processDonation.addEventListener('click', () => {
-                    const amount = document.getElementById('donationAmount')?.value;
-                    if (amount && parseFloat(amount) > 0) {
-                        alert(`Спасибо за донат ${amount} руб!`);
-                        if (donationModal) donationModal.style.display = 'none';
-                    } else {
-                        alert('Пожалуйста, введите корректную сумму');
+
+            // Admin button
+            if (adminBtn) {
+                adminBtn.addEventListener('click', () => {
+                    if (isAdmin) {
+                        if (adminPanel) adminPanel.style.display = 'block';
+                        if (mainContent) mainContent.style.display = 'none';
+                        initializeAdminPanel();
                     }
                 });
             }
-            
-            // Clan members modal
-            if (clanMembersBtn) {
-                clanMembersBtn.addEventListener('click', () => {
-                    initializeClanMembersModal();
-                    if (clanMembersModal) clanMembersModal.style.display = 'flex';
-                });
-            }
-            
-            if (clanMembersBtn2) {
-                clanMembersBtn2.addEventListener('click', () => {
-                    initializeClanMembersModal();
-                    if (clanMembersModal) clanMembersModal.style.display = 'flex';
-                });
-            }
-            
-            if (closeClanMembersModal) {
-                closeClanMembersModal.addEventListener('click', () => {
-                    if (clanMembersModal) clanMembersModal.style.display = 'none';
-                });
-            }
-            
-            // Events modal
-            if (eventsBtn) {
-                eventsBtn.addEventListener('click', () => {
-                    initializeEventsModal();
-                    if (eventsModal) eventsModal.style.display = 'flex';
-                });
-            }
-            
-            if (eventsBtn2) {
-                eventsBtn2.addEventListener('click', () => {
-                    initializeEventsModal();
-                    if (eventsModal) eventsModal.style.display = 'flex';
-                });
-            }
-            
-            if (closeEventsModal) {
-                closeEventsModal.addEventListener('click', () => {
-                    if (eventsModal) eventsModal.style.display = 'none';
-                });
-            }
-            
-            // Warehouse modal
-            if (warehouseBtn) {
-                warehouseBtn.addEventListener('click', () => {
-                    initializeWarehouseModal();
-                    if (warehouseModal) warehouseModal.style.display = 'flex';
-                });
-            }
-            
-            if (closeWarehouseModal) {
-                closeWarehouseModal.addEventListener('click', () => {
-                    if (warehouseModal) warehouseModal.style.display = 'none';
-                });
-            }
-            
-            // Back to main from admin
-            if (backToMain) {
-                backToMain.addEventListener('click', () => {
-                    if (adminPanel) adminPanel.style.display = 'none';
-                    if (mainContent) mainContent.style.display = 'grid';
-                });
-            }
-        
-            // Initialize
-            initializeData();
-            updateUI();
-            initializeClanMembersModal();
-            initializeEventsModal();
-            initializeWarehouseModal();
-            
-            console.log('🚀 Система клана МВД инициализирована');
+
+            console.log('🚀 Система клана МВД с верификацией инициализирована');
             console.log('💾 Данные загружены:', mockData);
         });
     </script>
