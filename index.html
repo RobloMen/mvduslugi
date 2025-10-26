@@ -2318,58 +2318,74 @@
                 }
             }
             
-            // Setup add buttons - НОВАЯ ФУНКЦИЯ ДЛЯ КНОПОК ДОБАВЛЕНИЯ
+            // Setup add buttons - УЛУЧШЕННАЯ ФУНКЦИЯ ДЛЯ КНОПОК ДОБАВЛЕНИЯ
             function setupAddButtons() {
                 console.log('🔧 Настройка кнопок добавления...');
                 
-                // Ищем кнопки по разным селекторам
-                const addButtons = {
-                    member: document.getElementById('addMemberBtn') || document.querySelector('[onclick*="member"]') || document.querySelector('button:contains("Добавить участника")'),
-                    event: document.getElementById('addEventBtn') || document.querySelector('[onclick*="event"]') || document.querySelector('button:contains("Создать ивент")'),
-                    warehouse: document.getElementById('addWarehouseBtn') || document.querySelector('[onclick*="warehouse"]') || document.querySelector('button:contains("Добавить предмет")')
-                };
-                
-                console.log('Найденные кнопки:', addButtons);
-                
-                // Назначаем обработчики
-                if (addButtons.member) {
-                    addButtons.member.addEventListener('click', () => {
-                        console.log('🎯 Нажата кнопка добавления участника');
-                        openEditModal('member');
-                    });
-                }
-                
-                if (addButtons.event) {
-                    addButtons.event.addEventListener('click', () => {
-                        console.log('🎯 Нажата кнопка создания ивента');
-                        openEditModal('event');
-                    });
-                }
-                
-                if (addButtons.warehouse) {
-                    addButtons.warehouse.addEventListener('click', () => {
-                        console.log('🎯 Нажата кнопка добавления предмета');
-                        openEditModal('warehouse');
-                    });
-                }
-                
-                // Альтернативный поиск по тексту кнопок
+                // Ищем кнопки по ID и по тексту
                 const allButtons = document.querySelectorAll('button');
+                
                 allButtons.forEach(button => {
                     const buttonText = button.textContent.toLowerCase();
-                    if (buttonText.includes('добавить участника') || buttonText.includes('add member')) {
-                        console.log('✅ Найдена кнопка добавления участника по тексту');
+                    const buttonId = button.id.toLowerCase();
+                    
+                    // Проверяем по ID
+                    if (buttonId.includes('addmember') || buttonId.includes('add_member')) {
+                        console.log('✅ Найдена кнопка добавления участника по ID:', button.id);
+                        button.addEventListener('click', () => {
+                            console.log('🎯 Нажата кнопка добавления участника');
+                            openEditModal('member');
+                        });
+                    }
+                    else if (buttonId.includes('addevent') || buttonId.includes('add_event')) {
+                        console.log('✅ Найдена кнопка создания ивента по ID:', button.id);
+                        button.addEventListener('click', () => {
+                            console.log('🎯 Нажата кнопка создания ивента');
+                            openEditModal('event');
+                        });
+                    }
+                    else if (buttonId.includes('addwarehouse') || buttonId.includes('add_warehouse') || buttonId.includes('additem')) {
+                        console.log('✅ Найдена кнопка добавления предмета по ID:', button.id);
+                        button.addEventListener('click', () => {
+                            console.log('🎯 Нажата кнопка добавления предмета');
+                            openEditModal('warehouse');
+                        });
+                    }
+                    // Проверяем по тексту
+                    else if (buttonText.includes('добавить участника') || buttonText.includes('add member')) {
+                        console.log('✅ Найдена кнопка добавления участника по тексту:', button.textContent);
                         button.addEventListener('click', () => openEditModal('member'));
                     }
-                    if (buttonText.includes('создать ивент') || buttonText.includes('add event') || buttonText.includes('create event')) {
-                        console.log('✅ Найдена кнопка создания ивента по тексту');
+                    else if (buttonText.includes('создать ивент') || buttonText.includes('add event') || buttonText.includes('create event')) {
+                        console.log('✅ Найдена кнопка создания ивента по тексту:', button.textContent);
                         button.addEventListener('click', () => openEditModal('event'));
                     }
-                    if (buttonText.includes('добавить предмет') || buttonText.includes('add item') || buttonText.includes('add warehouse')) {
-                        console.log('✅ Найдена кнопка добавления предмета по тексту');
+                    else if (buttonText.includes('добавить предмет') || buttonText.includes('add item') || buttonText.includes('add warehouse')) {
+                        console.log('✅ Найдена кнопка добавления предмета по тексту:', button.textContent);
                         button.addEventListener('click', () => openEditModal('warehouse'));
                     }
                 });
+                
+                // Дополнительно ищем кнопки в админ-панели
+                const adminPanelButtons = adminPanel?.querySelectorAll('button');
+                if (adminPanelButtons) {
+                    adminPanelButtons.forEach(button => {
+                        const buttonText = button.textContent.toLowerCase();
+                        
+                        if (buttonText.includes('добавить') && buttonText.includes('участник')) {
+                            console.log('✅ Найдена кнопка в админ-панели:', button.textContent);
+                            button.addEventListener('click', () => openEditModal('member'));
+                        }
+                        else if (buttonText.includes('создать') && buttonText.includes('ивент')) {
+                            console.log('✅ Найдена кнопка в админ-панели:', button.textContent);
+                            button.addEventListener('click', () => openEditModal('event'));
+                        }
+                        else if (buttonText.includes('добавить') && buttonText.includes('предмет')) {
+                            console.log('✅ Найдена кнопка в админ-панели:', button.textContent);
+                            button.addEventListener('click', () => openEditModal('warehouse'));
+                        }
+                    });
+                }
             }
             
             // Initialize clan members modal
@@ -2539,7 +2555,7 @@
             }
             
             // Event Listeners
-            
+                
             // Auth tabs
             authTabs.forEach(tab => {
                 tab.addEventListener('click', () => {
@@ -2554,19 +2570,12 @@
                 });
             });
             
-            // Login form - ИСПРАВЛЕННЫЕ ID
+            // Login form
             if (loginForm) {
                 loginForm.addEventListener('submit', (e) => {
                     e.preventDefault();
-                    // Пробуем разные возможные ID для полей ввода
-                    const username = document.getElementById('loginUsername')?.value || 
-                                   document.getElementById('username')?.value ||
-                                   document.querySelector('#loginForm input[type="text"]')?.value;
-                    const password = document.getElementById('loginPassword')?.value || 
-                                   document.getElementById('password')?.value ||
-                                   document.querySelector('#loginForm input[type="password"]')?.value;
-                    
-                    console.log('Логин - username:', username, 'password:', password);
+                    const username = document.getElementById('loginUsername')?.value;
+                    const password = document.getElementById('loginPassword')?.value;
                     
                     if (username && password) {
                         currentUser = username;
@@ -2586,31 +2595,20 @@
                         }
                     } else {
                         alert('Пожалуйста, заполните все поля!');
-                        console.log('Ошибка: не все поля заполнены');
                     }
                 });
             }
             
-            // Register form - ИСПРАВЛЕННЫЕ ID
+            // Register form
             if (registerForm) {
                 registerForm.addEventListener('submit', (e) => {
                     e.preventDefault();
-                    // Пробуем разные возможные ID для полей ввода
-                    const username = document.getElementById('registerUsername')?.value || 
-                                   document.getElementById('regUsername')?.value ||
-                                   document.querySelector('#registerForm input[type="text"]')?.value;
-                    const password = document.getElementById('registerPassword')?.value || 
-                                   document.getElementById('regPassword')?.value ||
-                                   document.querySelectorAll('#registerForm input[type="password"]')[0]?.value;
-                    const confirmPassword = document.getElementById('registerConfirmPassword')?.value || 
-                                          document.getElementById('regConfirmPassword')?.value ||
-                                          document.querySelectorAll('#registerForm input[type="password"]')[1]?.value;
-                    
-                    console.log('Регистрация - username:', username, 'password:', password, 'confirmPassword:', confirmPassword);
+                    const username = document.getElementById('registerUsername')?.value;
+                    const password = document.getElementById('registerPassword')?.value;
+                    const confirmPassword = document.getElementById('registerConfirmPassword')?.value;
                     
                     if (!username || !password || !confirmPassword) {
                         alert('Пожалуйста, заполните все поля!');
-                        console.log('Ошибка: не все поля заполнены');
                         return;
                     }
                     
@@ -2620,16 +2618,13 @@
                     }
                     
                     if (username && password) {
-                        // Показываем сообщение об успехе
                         if (successMessage) {
                             successMessage.textContent = 'Регистрация успешна! Теперь войдите в систему.';
                             successMessage.style.display = 'block';
                         }
                         
-                        // Очищаем форму
                         registerForm.reset();
                         
-                        // Автоматически переключаем на вкладку входа через 2 секунды
                         setTimeout(() => {
                             if (successMessage) successMessage.style.display = 'none';
                             const loginTab = document.querySelector('[data-tab="login"]');
@@ -2825,7 +2820,7 @@
                     if (mainContent) mainContent.style.display = 'grid';
                 });
             }
-    
+        
             // Initialize
             initializeData();
             updateUI();
