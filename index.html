@@ -1741,7 +1741,6 @@
             </div>
         </div>
     </footer>
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Telegram bot configuration
@@ -1762,7 +1761,7 @@
             // Глобальные переменные для работы с модальными окнами
             let currentModalType = null;
             let currentEditId = null;
-
+    
             // Elements
             const authContainer = document.getElementById('authContainer');
             const mainContent = document.getElementById('mainContent');
@@ -1819,7 +1818,7 @@
             const codeInputs = document.querySelectorAll('.code-input');
             const registerSubmitBtn = document.getElementById('registerSubmitBtn');
             const serviceUsernameInput = document.getElementById('serviceUsername');
-
+    
             // ID администраторов
             const ADMIN_CHAT_IDS = {
                 'mvd_general_RF': '6064583804',
@@ -1833,7 +1832,7 @@
                 'kazuha', '@kazuha',
                 'mvd', '@mvd'
             ];
-
+    
             // Load data from localStorage
             function loadData() {
                 try {
@@ -1912,7 +1911,7 @@
                 
                 saveData();
             }
-
+    
             // Update UI based on authentication state
             function updateUI() {
                 if (currentUser) {
@@ -1964,37 +1963,113 @@
                 
                 return isAdminUser;
             }
-
+    
             // ==================== ВЕРИФИКАЦИЯ ====================
-
+    
             // Генерация случайного кода
             function generateVerificationCode() {
                 return Math.floor(100000 + Math.random() * 900000).toString();
             }
-
+    
+            // Функция отправки сообщения через Telegram Bot API
+            async function sendTelegramMessage(chatId, message) {
+                try {
+                    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+                    
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            chat_id: chatId,
+                            text: message,
+                            parse_mode: 'HTML'
+                        })
+                    });
+    
+                    const result = await response.json();
+                    
+                    if (result.ok) {
+                        console.log('✅ Сообщение отправлено в Telegram');
+                        return true;
+                    } else {
+                        console.error('❌ Ошибка отправки в Telegram:', result);
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('❌ Ошибка сети:', error);
+                    return false;
+                }
+            }
+    
+            // Получение chat_id по username
+            async function getChatIdByUsername(username) {
+                try {
+                    // Сначала пробуем отправить сообщение чтобы получить chat_id
+                    const testMessage = "🔐 Код верификации для клана МВД будет отправлен в следующем сообщении...";
+                    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+                    
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            chat_id: username,
+                            text: testMessage
+                        })
+                    });
+    
+                    const result = await response.json();
+                    
+                    if (result.ok) {
+                        return result.result.chat.id;
+                    } else {
+                        console.error('❌ Не удалось найти пользователя:', username);
+                        return null;
+                    }
+                } catch (error) {
+                    console.error('❌ Ошибка поиска пользователя:', error);
+                    return null;
+                }
+            }
+    
             // Отправка кода верификации через Telegram бота
             async function sendVerificationCode(telegramUsername, code) {
                 try {
                     console.log(`📤 Отправка кода ${code} пользователю ${telegramUsername}`);
                     
-                    // В реальном приложении здесь будет вызов API Telegram бота
-                    // Для демонстрации используем эмуляцию
+                    const cleanUsername = telegramUsername.startsWith('@') ? telegramUsername : `@${telegramUsername}`;
+                    const message = `🔐 <b>Код верификации для клана МВД</b>\n\nВаш код: <code>${code}</code>\n\nИспользуйте этот код для завершения регистрации на портале клана МВД.\n\n⏰ Код действителен 10 минут.`;
                     
-                    const message = `🔐 Код верификации для клана МВД: ${code}\n\nИспользуйте этот код для завершения регистрации. Код действителен 10 минут.`;
+                    // Пытаемся отправить сообщение напрямую по username
+                    const sent = await sendTelegramMessage(cleanUsername, message);
                     
-                    // Эмуляция отправки сообщения
-                    setTimeout(() => {
-                        console.log(`✅ Код отправлен в Telegram: ${telegramUsername}`);
-                        console.log(`📝 Сообщение: ${message}`);
-                    }, 1000);
-                    
-                    return true;
+                    if (sent) {
+                        console.log(`✅ Код отправлен в Telegram: ${cleanUsername}`);
+                        return true;
+                    } else {
+                        console.log(`❌ Не удалось отправить по username, пробуем через chat_id...`);
+                        
+                        // Если не получилось по username, пробуем получить chat_id
+                        const chatId = await getChatIdByUsername(cleanUsername);
+                        if (chatId) {
+                            const sentById = await sendTelegramMessage(chatId, message);
+                            if (sentById) {
+                                console.log(`✅ Код отправлен по chat_id: ${chatId}`);
+                                return true;
+                            }
+                        }
+                        
+                        return false;
+                    }
                 } catch (error) {
                     console.error('❌ Ошибка отправки кода:', error);
                     return false;
                 }
             }
-
+    
             // Запуск таймера для повторной отправки кода
             function startResendTimer() {
                 let timeLeft = 60;
@@ -2011,7 +2086,7 @@
                     }
                 }, 1000);
             }
-
+    
             // Обработка отправки формы регистрации
             if (registerForm) {
                 registerForm.addEventListener('submit', async (e) => {
@@ -2045,6 +2120,10 @@
                         return;
                     }
                     
+                    // Показываем загрузку
+                    if (loadingMessage) loadingMessage.style.display = 'block';
+                    if (registerSubmitBtn) registerSubmitBtn.disabled = true;
+                    
                     // Генерируем код верификации
                     const verificationCode = generateVerificationCode();
                     
@@ -2058,29 +2137,38 @@
                         timestamp: Date.now()
                     };
                     
-                    // Показываем форму верификации
-                    registerForm.style.display = 'none';
-                    verificationForm.style.display = 'block';
-                    verificationUsername.textContent = currentVerificationData.telegram;
-                    
                     // Отправляем код
                     const sent = await sendVerificationCode(currentVerificationData.telegram, verificationCode);
                     
+                    // Скрываем загрузку
+                    if (loadingMessage) loadingMessage.style.display = 'none';
+                    if (registerSubmitBtn) registerSubmitBtn.disabled = false;
+                    
                     if (sent) {
+                        // Показываем форму верификации
+                        registerForm.style.display = 'none';
+                        verificationForm.style.display = 'block';
+                        verificationForm.classList.add('active');
+                        verificationUsername.textContent = currentVerificationData.telegram;
+                        
                         startResendTimer();
-                        alert('Код верификации отправлен в Telegram! Проверьте ваши сообщения.');
+                        alert('✅ Код верификации отправлен в Telegram! Проверьте ваши сообщения.');
                     } else {
-                        alert('Ошибка отправки кода. Пожалуйста, проверьте правильность Telegram username.');
-                        verificationForm.style.display = 'none';
-                        registerForm.style.display = 'block';
+                        alert('❌ Ошибка отправки кода. Пожалуйста, проверьте правильность Telegram username и убедитесь, что вы начали диалог с ботом @MVD_Clan_Bot');
                     }
                 });
             }
-
+    
             // Обработка ввода кода верификации
             codeInputs.forEach((input, index) => {
                 input.addEventListener('input', (e) => {
                     const value = e.target.value;
+                    
+                    // Разрешаем только цифры
+                    if (!/^\d*$/.test(value)) {
+                        e.target.value = value.replace(/\D/g, '');
+                        return;
+                    }
                     
                     if (value.length === 1 && index < codeInputs.length - 1) {
                         codeInputs[index + 1].focus();
@@ -2099,7 +2187,7 @@
                     }
                 });
             });
-
+    
             // Функция проверки кода
             function verifyCode() {
                 const enteredCode = Array.from(codeInputs)
@@ -2128,13 +2216,13 @@
                     // Код верный - завершаем регистрацию
                     completeRegistration();
                 } else {
-                    alert('Неверный код верификации! Пожалуйста, проверьте код и попробуйте снова.');
+                    alert('❌ Неверный код верификации! Пожалуйста, проверьте код и попробуйте снова.');
                     // Очищаем поля
                     codeInputs.forEach(input => input.value = '');
                     codeInputs[0].focus();
                 }
             }
-
+    
             // Завершение регистрации
             function completeRegistration() {
                 if (!currentVerificationData) return;
@@ -2145,7 +2233,7 @@
                     username: currentVerificationData.nickname,
                     telegram: currentVerificationData.telegram,
                     rank: currentVerificationData.rank,
-                    password: currentVerificationData.password, // В реальном приложении нужно хэшировать!
+                    password: currentVerificationData.password,
                     isVerified: true,
                     registrationDate: new Date().toISOString()
                 };
@@ -2169,6 +2257,7 @@
                 
                 // Показываем сообщение об успехе
                 verificationForm.style.display = 'none';
+                verificationForm.classList.remove('active');
                 successMessage.style.display = 'block';
                 
                 // Отправляем уведомление администраторам
@@ -2179,29 +2268,43 @@
                 clearInterval(verificationTimer);
                 
                 console.log('✅ Регистрация завершена:', newUser);
+                
+                // Автоматически входим после регистрации
+                setTimeout(() => {
+                    currentUser = newUser.username;
+                    isAdmin = checkAdmin(newUser.username);
+                    updateUI();
+                    alert('🎉 Регистрация успешно завершена! Добро пожаловать в клан МВД!');
+                }, 2000);
             }
-
+    
             // Отправка уведомления администраторам
-            function sendAdminNotification(request) {
-                const message = `📝 Новая заявка в клан!\n\n👤 Никнейм: ${request.nickname}\n📱 Telegram: ${request.telegram}\n⭐ Звание: ${request.rank}\n📅 Дата: ${request.date}`;
+            async function sendAdminNotification(request) {
+                const message = `📝 <b>Новая заявка в клан!</b>\n\n👤 <b>Никнейм:</b> ${request.nickname}\n📱 <b>Telegram:</b> ${request.telegram}\n⭐ <b>Звание:</b> ${request.rank}\n📅 <b>Дата:</b> ${request.date}\n\n✅ <b>Верификация пройдена успешно!</b>`;
                 
                 console.log('📤 Уведомление администраторам:', message);
                 
-                // В реальном приложении здесь будет отправка через Telegram API
-                Object.values(ADMIN_CHAT_IDS).forEach(chatId => {
-                    console.log(`Отправка администратору ${chatId}: ${message}`);
-                });
+                // Отправляем всем администраторам
+                const adminPromises = Object.values(ADMIN_CHAT_IDS).map(chatId => 
+                    sendTelegramMessage(chatId, message)
+                );
+                
+                await Promise.all(adminPromises);
             }
-
+    
             // Обработчик кнопки подтверждения кода
             if (verifyCodeBtn) {
                 verifyCodeBtn.addEventListener('click', verifyCode);
             }
-
+    
             // Обработчик повторной отправки кода
             if (resendCode) {
                 resendCode.addEventListener('click', async () => {
                     if (!currentVerificationData) return;
+                    
+                    // Показываем загрузку
+                    resendCode.style.display = 'none';
+                    resendTimer.textContent = '60';
                     
                     // Генерируем новый код
                     const newCode = generateVerificationCode();
@@ -2213,17 +2316,20 @@
                     
                     if (sent) {
                         startResendTimer();
-                        alert('Новый код отправлен!');
+                        alert('✅ Новый код отправлен!');
                         
                         // Очищаем поля ввода
                         codeInputs.forEach(input => input.value = '');
                         codeInputs[0].focus();
+                    } else {
+                        alert('❌ Ошибка отправки кода. Попробуйте позже.');
+                        resendCode.style.display = 'inline';
                     }
                 });
             }
-
+    
             // ==================== СИСТЕМА УСЛУГ ====================
-
+    
             // Обработчик выбора услуги
             serviceOptions.forEach(option => {
                 option.addEventListener('click', () => {
@@ -2233,7 +2339,7 @@
                     selectedServiceProvider = option.getAttribute('data-provider');
                 });
             });
-
+    
             // Обработчик отправки заявки на услугу
             if (sendServiceRequest) {
                 sendServiceRequest.addEventListener('click', async () => {
@@ -2275,11 +2381,19 @@
                     mockData.services.push(serviceRequest);
                     saveData();
                     
+                    // Показываем загрузку
+                    sendServiceRequest.disabled = true;
+                    sendServiceRequest.textContent = 'Отправка...';
+                    
                     // Отправляем уведомление поставщику услуги
                     const sent = await sendServiceNotification(serviceRequest);
                     
+                    // Восстанавливаем кнопку
+                    sendServiceRequest.disabled = false;
+                    sendServiceRequest.textContent = 'Отправить заявку';
+                    
                     if (sent) {
-                        alert(`Заявка на услугу "${selectedService}" отправлена! ${selectedServiceProvider} свяжется с вами в Telegram.`);
+                        alert(`✅ Заявка на услугу "${getServiceName(selectedService)}" отправлена! ${selectedServiceProvider} свяжется с вами в Telegram.`);
                         servicesModal.style.display = 'none';
                         
                         // Сбрасываем выбор
@@ -2287,53 +2401,59 @@
                         selectedService = null;
                         selectedServiceProvider = null;
                     } else {
-                        alert('Ошибка при отправке заявки. Пожалуйста, попробуйте позже.');
+                        alert('❌ Ошибка при отправке заявки. Пожалуйста, попробуйте позже.');
                     }
                 });
             }
-
+    
+            // Получение названия услуги по коду
+            function getServiceName(serviceCode) {
+                const serviceNames = {
+                    'protection': 'Защита терры',
+                    'resources': 'Поиск ресурсов',
+                    'project_help': 'Помощь в проекте',
+                    'kolbasa': 'Колбаса',
+                    'bot_creation': 'Создание ботов',
+                    'linux_help': 'Помощь в линуксе',
+                    'building_tips': 'Уроки строительства',
+                    'scene_creation': 'Создание сцен',
+                    'pvp_training': 'Обучение по PvP'
+                };
+                
+                return serviceNames[serviceCode] || serviceCode;
+            }
+    
             // Отправка уведомления о заказе услуги
             async function sendServiceNotification(serviceRequest) {
                 try {
-                    const serviceNames = {
-                        'protection': 'Защита терры',
-                        'resources': 'Поиск ресурсов',
-                        'project_help': 'Помощь в проекте',
-                        'kolbasa': 'Колбаса',
-                        'bot_creation': 'Создание ботов',
-                        'linux_help': 'Помощь в линуксе',
-                        'building_tips': 'Уроки строительства',
-                        'scene_creation': 'Создание сцен',
-                        'pvp_training': 'Обучение по PvP'
-                    };
+                    const serviceName = getServiceName(serviceRequest.service);
                     
-                    const serviceName = serviceNames[serviceRequest.service] || serviceRequest.service;
+                    const messageToProvider = `🛎️ <b>Новая заявка на услугу!</b>\n\n📋 <b>Услуга:</b> ${serviceName}\n👤 <b>Клиент:</b> ${serviceRequest.customer}\n📱 <b>Telegram:</b> ${serviceRequest.customerTelegram}\n⭐ <b>Звание:</b> ${serviceRequest.userRank}\n📅 <b>Дата:</b> ${serviceRequest.date}\n\n⚠️ <b>Свяжитесь с клиентом как можно скорее!</b>`;
                     
-                    const messageToProvider = `🛎️ Новая заявка на услугу!\n\n📋 Услуга: ${serviceName}\n👤 Клиент: ${serviceRequest.customer}\n📱 Telegram: ${serviceRequest.customerTelegram}\n⭐ Звание: ${serviceRequest.userRank}\n📅 Дата: ${serviceRequest.date}`;
-                    
-                    const messageToCustomer = `✅ Ваша заявка на услугу "${serviceName}" принята!\n\n👨‍💻 Исполнитель: ${serviceRequest.provider}\n📅 Дата заявки: ${serviceRequest.date}\n\n${serviceRequest.provider} свяжется с вами в ближайшее время.`;
+                    const messageToCustomer = `✅ <b>Ваша заявка принята!</b>\n\n📋 <b>Услуга:</b> ${serviceName}\n👨‍💻 <b>Исполнитель:</b> ${serviceRequest.provider}\n📅 <b>Дата заявки:</b> ${serviceRequest.date}\n\n📞 <b>${serviceRequest.provider}</b> свяжется с вами в ближайшее время.\n\n⏳ <i>Если в течение 24 часов вам не ответили, обратитесь к администраторам клана.</i>`;
                     
                     console.log('📤 Уведомление поставщику:', messageToProvider);
                     console.log('📤 Уведомление клиенту:', messageToCustomer);
                     
                     // Отправка поставщику
                     const providerChatId = ADMIN_CHAT_IDS[serviceRequest.provider.replace('@', '')];
+                    let providerSent = false;
                     if (providerChatId) {
-                        console.log(`Отправка поставщику ${serviceRequest.provider} (${providerChatId}): ${messageToProvider}`);
+                        providerSent = await sendTelegramMessage(providerChatId, messageToProvider);
                     }
                     
                     // Отправка клиенту
-                    console.log(`Отправка клиенту ${serviceRequest.customerTelegram}: ${messageToCustomer}`);
+                    const customerSent = await sendTelegramMessage(serviceRequest.customerTelegram, messageToCustomer);
                     
-                    return true;
+                    return providerSent && customerSent;
                 } catch (error) {
                     console.error('❌ Ошибка отправки уведомления об услуге:', error);
                     return false;
                 }
             }
-
+    
             // ==================== СИСТЕМА ВХОДА ====================
-
+    
             // Обработчик формы входа
             if (loginForm) {
                 loginForm.addEventListener('submit', (e) => {
@@ -2356,16 +2476,16 @@
                             isAdmin = checkAdmin(username);
                             updateUI();
                             
-                            alert('Успешный вход в систему!');
+                            alert('✅ Успешный вход в систему! Добро пожаловать!');
                         } else {
-                            alert('Ваш аккаунт не верифицирован. Пожалуйста, завершите верификацию.');
+                            alert('❌ Ваш аккаунт не верифицирован. Пожалуйста, завершите верификацию.');
                         }
                     } else {
-                        alert('Неверный никнейм или пароль!');
+                        alert('❌ Неверный никнейм или пароль!');
                     }
                 });
             }
-
+    
             // Обработчик выхода
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', () => {
@@ -2375,27 +2495,40 @@
                     alert('Вы вышли из системы');
                 });
             }
-
-            // ==================== ИНИЦИАЛИЗАЦИЯ ====================
-
-            // Initialize
-            initializeData();
-            updateUI();
-
-            // Остальные обработчики событий (без изменений)
+    
+            // ==================== ОБРАБОТЧИКИ ИНТЕРФЕЙСА ====================
+    
+            // Переключение между формами входа и регистрации
             authTabs.forEach(tab => {
                 tab.addEventListener('click', () => {
                     const target = tab.getAttribute('data-tab');
                     
                     authTabs.forEach(t => t.classList.remove('active'));
-                    authForms.forEach(f => f.classList.remove('active'));
+                    authForms.forEach(f => {
+                        f.classList.remove('active');
+                        f.style.display = 'none';
+                    });
                     
                     tab.classList.add('active');
                     const targetForm = document.getElementById(`${target}Form`);
-                    if (targetForm) targetForm.classList.add('active');
+                    if (targetForm) {
+                        targetForm.style.display = 'block';
+                        targetForm.classList.add('active');
+                    }
+                    
+                    // Сбрасываем форму верификации если она была открыта
+                    if (verificationForm) {
+                        verificationForm.style.display = 'none';
+                        verificationForm.classList.remove('active');
+                    }
+                    
+                    // Сбрасываем успешное сообщение
+                    if (successMessage) {
+                        successMessage.style.display = 'none';
+                    }
                 });
             });
-
+    
             // Services modal
             if (servicesBtn) {
                 servicesBtn.addEventListener('click', () => {
@@ -2408,20 +2541,49 @@
                     if (servicesModal) servicesModal.style.display = 'none';
                 });
             }
-
+    
             // Admin button
             if (adminBtn) {
                 adminBtn.addEventListener('click', () => {
                     if (isAdmin) {
                         if (adminPanel) adminPanel.style.display = 'block';
                         if (mainContent) mainContent.style.display = 'none';
-                        initializeAdminPanel();
                     }
                 });
             }
-
+    
+            // Back to main from admin
+            if (backToMain) {
+                backToMain.addEventListener('click', () => {
+                    if (adminPanel) adminPanel.style.display = 'none';
+                    if (mainContent) mainContent.style.display = 'grid';
+                });
+            }
+    
+            // Theme toggle
+            if (themeToggle) {
+                themeToggle.addEventListener('change', function() {
+                    document.body.classList.toggle('liquid-glass');
+                    
+                    // Показываем предупреждение для слабых устройств
+                    if (this.checked) {
+                        performanceWarning.style.display = 'block';
+                        setTimeout(() => {
+                            performanceWarning.style.display = 'none';
+                        }, 5000);
+                    }
+                });
+            }
+    
+            // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+    
+            // Initialize
+            initializeData();
+            updateUI();
+    
             console.log('🚀 Система клана МВД с верификацией инициализирована');
             console.log('💾 Данные загружены:', mockData);
+            console.log('🤖 Telegram Bot Token:', TELEGRAM_BOT_TOKEN);
         });
     </script>
 </body>
