@@ -774,7 +774,7 @@
             border-radius: 12px;
             padding: 30px;
             width: 90%;
-            max-width: 600px;
+            max-width: 800px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             max-height: 90vh;
             overflow-y: auto;
@@ -1527,6 +1527,7 @@
                             <th>Telegram</th>
                             <th>Звание</th>
                             <th>Статус</th>
+                            <th>Действия</th>
                         </tr>
                     </thead>
                     <tbody id="clanMembersTable">
@@ -1555,6 +1556,7 @@
                             <th>Дата</th>
                             <th>Участники</th>
                             <th>Статус</th>
+                            <th>Действия</th>
                         </tr>
                     </thead>
                     <tbody id="eventsListTable">
@@ -1583,6 +1585,7 @@
                             <th>Количество</th>
                             <th>Категория</th>
                             <th>Последнее обновление</th>
+                            <th>Действия</th>
                         </tr>
                     </thead>
                     <tbody id="warehouseListTable">
@@ -2042,10 +2045,40 @@
                     const statusCell = document.createElement('td');
                     statusCell.textContent = member.status;
                     
+                    const actionsCell = document.createElement('td');
+                    actionsCell.className = 'action-buttons';
+                    
+                    if (isAdmin) {
+                        const editBtn = document.createElement('button');
+                        editBtn.className = 'action-btn edit-btn';
+                        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                        editBtn.title = 'Редактировать';
+                        editBtn.onclick = () => {
+                            openEditModal('member', member);
+                            clanMembersModal.style.display = 'none';
+                        };
+                        
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'action-btn delete-btn';
+                        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                        deleteBtn.title = 'Удалить';
+                        deleteBtn.onclick = () => {
+                            if (confirm(`Вы уверены, что хотите удалить участника ${member.nickname}?`)) {
+                                mockData.members = mockData.members.filter(m => m.id !== member.id);
+                                populateClanMembersModal();
+                                updateStats();
+                            }
+                        };
+                        
+                        actionsCell.appendChild(editBtn);
+                        actionsCell.appendChild(deleteBtn);
+                    }
+                    
                     row.appendChild(nicknameCell);
                     row.appendChild(telegramCell);
                     row.appendChild(rankCell);
                     row.appendChild(statusCell);
+                    row.appendChild(actionsCell);
                     
                     clanMembersTable.appendChild(row);
                 });
@@ -2073,10 +2106,40 @@
                     const statusCell = document.createElement('td');
                     statusCell.textContent = event.status;
                     
+                    const actionsCell = document.createElement('td');
+                    actionsCell.className = 'action-buttons';
+                    
+                    if (isAdmin) {
+                        const editBtn = document.createElement('button');
+                        editBtn.className = 'action-btn edit-btn';
+                        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                        editBtn.title = 'Редактировать';
+                        editBtn.onclick = () => {
+                            openEditModal('event', event);
+                            eventsModal.style.display = 'none';
+                        };
+                        
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'action-btn delete-btn';
+                        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                        deleteBtn.title = 'Удалить';
+                        deleteBtn.onclick = () => {
+                            if (confirm(`Вы уверены, что хотите удалить ивент ${event.name}?`)) {
+                                mockData.events = mockData.events.filter(e => e.id !== event.id);
+                                populateEventsModal();
+                                updateStats();
+                            }
+                        };
+                        
+                        actionsCell.appendChild(editBtn);
+                        actionsCell.appendChild(deleteBtn);
+                    }
+                    
                     row.appendChild(nameCell);
                     row.appendChild(dateCell);
                     row.appendChild(participantsCell);
                     row.appendChild(statusCell);
+                    row.appendChild(actionsCell);
                     
                     eventsListTable.appendChild(row);
                 });
@@ -2104,10 +2167,40 @@
                     const updatedCell = document.createElement('td');
                     updatedCell.textContent = item.updated;
                     
+                    const actionsCell = document.createElement('td');
+                    actionsCell.className = 'action-buttons';
+                    
+                    if (isAdmin) {
+                        const editBtn = document.createElement('button');
+                        editBtn.className = 'action-btn edit-btn';
+                        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                        editBtn.title = 'Редактировать';
+                        editBtn.onclick = () => {
+                            openEditModal('warehouse', item);
+                            warehouseModal.style.display = 'none';
+                        };
+                        
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'action-btn delete-btn';
+                        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                        deleteBtn.title = 'Удалить';
+                        deleteBtn.onclick = () => {
+                            if (confirm(`Вы уверены, что хотите удалить предмет ${item.name}?`)) {
+                                mockData.warehouse = mockData.warehouse.filter(w => w.id !== item.id);
+                                populateWarehouseModal();
+                                updateStats();
+                            }
+                        };
+                        
+                        actionsCell.appendChild(editBtn);
+                        actionsCell.appendChild(deleteBtn);
+                    }
+                    
                     row.appendChild(nameCell);
                     row.appendChild(quantityCell);
                     row.appendChild(categoryCell);
                     row.appendChild(updatedCell);
+                    row.appendChild(actionsCell);
                     
                     warehouseListTable.appendChild(row);
                 });
