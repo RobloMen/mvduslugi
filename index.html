@@ -1638,7 +1638,6 @@
             </div>
         </div>
     </footer>
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Elements
@@ -1712,7 +1711,7 @@
             let isAdmin = false;
             
             // Mock data for admin panel
-            const mockData = {
+            let mockData = {
                 members: [
                     { id: 1, nickname: 'mvd_general', telegram: '@mvd_general_rf', rank: 'Генерал', status: 'Активен' },
                     { id: 2, nickname: 'mes_generall', telegram: '@mes_generall', rank: 'Генерал', status: 'Активен' },
@@ -1800,6 +1799,11 @@
             // Populate table with data
             function populateTable(tableId, data, type) {
                 const table = document.getElementById(tableId);
+                if (!table) {
+                    console.error('Table not found:', tableId);
+                    return;
+                }
+                
                 table.innerHTML = '';
                 
                 data.forEach(item => {
@@ -1977,15 +1981,15 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Дата и время</label>
-                                <input type="datetime-local" class="form-input" id="editEventDate" value="${isEdit ? formatDateTimeForInput(item.date) : ''}" required>
+                                <input type="datetime-local" class="form-input" id="editEventDate" value="${isEdit ? formatDateTimeForInput(item.date) : getCurrentDateTime()}" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Текущие участники</label>
-                                <input type="number" class="form-input" id="editEventCurrentParticipants" value="${currentParticipants}" required>
+                                <input type="number" class="form-input" id="editEventCurrentParticipants" value="${currentParticipants}" min="0" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Максимум участников</label>
-                                <input type="number" class="form-input" id="editEventMaxParticipants" value="${maxParticipants}" required>
+                                <input type="number" class="form-input" id="editEventMaxParticipants" value="${maxParticipants}" min="1" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Статус</label>
@@ -2007,7 +2011,7 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Количество</label>
-                                <input type="number" class="form-input" id="editItemQuantity" value="${isEdit ? item.quantity : ''}" required>
+                                <input type="number" class="form-input" id="editItemQuantity" value="${isEdit ? item.quantity : ''}" min="0" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Категория</label>
@@ -2053,107 +2057,154 @@
             
             // Format date for datetime-local input
             function formatDateTimeForInput(dateTimeStr) {
-                // Преобразуем строку в формат, понятный для datetime-local
-                const date = new Date(dateTimeStr);
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                const hours = String(date.getHours()).padStart(2, '0');
-                const minutes = String(date.getMinutes()).padStart(2, '0');
+                try {
+                    // Преобразуем строку в формат, понятный для datetime-local
+                    const date = new Date(dateTimeStr);
+                    if (isNaN(date.getTime())) {
+                        return getCurrentDateTime();
+                    }
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hours = String(date.getHours()).padStart(2, '0');
+                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                    
+                    return `${year}-${month}-${day}T${hours}:${minutes}`;
+                } catch (error) {
+                    console.error('Error formatting date:', error);
+                    return getCurrentDateTime();
+                }
+            }
+            
+            // Get current date time for form
+            function getCurrentDateTime() {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
                 
                 return `${year}-${month}-${day}T${hours}:${minutes}`;
             }
             
             // Save item (add or edit)
             function saveItem(type, id) {
+                console.log('Saving item:', type, 'ID:', id);
+                
                 let formData = {};
+                let isValid = true;
                 
                 try {
                     switch (type) {
                         case 'member':
-                            formData = {
-                                nickname: document.getElementById('editNickname').value.trim(),
-                                telegram: document.getElementById('editTelegram').value.trim(),
-                                rank: document.getElementById('editRank').value,
-                                status: document.getElementById('editStatus').value
-                            };
+                            const nickname = document.getElementById('editNickname').value.trim();
+                            const telegram = document.getElementById('editTelegram').value.trim();
+                            const rank = document.getElementById('editRank').value;
+                            const status = document.getElementById('editStatus').value;
                             
-                            // Валидация
-                            if (!formData.nickname || !formData.telegram) {
+                            if (!nickname || !telegram) {
                                 alert('Пожалуйста, заполните все обязательные поля!');
+                                isValid = false;
                                 return;
                             }
+                            
+                            formData = {
+                                nickname: nickname,
+                                telegram: telegram,
+                                rank: rank,
+                                status: status
+                            };
                             break;
                             
                         case 'event':
+                            const eventName = document.getElementById('editEventName').value.trim();
+                            const eventDate = document.getElementById('editEventDate').value;
                             const currentParticipants = parseInt(document.getElementById('editEventCurrentParticipants').value);
                             const maxParticipants = parseInt(document.getElementById('editEventMaxParticipants').value);
+                            const eventStatus = document.getElementById('editEventStatus').value;
+                            
+                            if (!eventName || !eventDate) {
+                                alert('Пожалуйста, заполните все обязательные поля!');
+                                isValid = false;
+                                return;
+                            }
                             
                             if (currentParticipants > maxParticipants) {
                                 alert('Текущее количество участников не может превышать максимальное!');
+                                isValid = false;
+                                return;
+                            }
+                            
+                            if (maxParticipants < 1) {
+                                alert('Максимальное количество участников должно быть больше 0!');
+                                isValid = false;
                                 return;
                             }
                             
                             formData = {
-                                name: document.getElementById('editEventName').value.trim(),
-                                date: document.getElementById('editEventDate').value,
+                                name: eventName,
+                                date: eventDate.replace('T', ' ') + ':00',
                                 participants: `${currentParticipants}/${maxParticipants}`,
-                                status: document.getElementById('editEventStatus').value
+                                status: eventStatus
                             };
-                            
-                            if (!formData.name || !formData.date) {
-                                alert('Пожалуйста, заполните все обязательные поля!');
-                                return;
-                            }
                             break;
                             
                         case 'warehouse':
+                            const itemName = document.getElementById('editItemName').value.trim();
                             const quantity = parseInt(document.getElementById('editItemQuantity').value);
+                            const category = document.getElementById('editItemCategory').value;
+                            
+                            if (!itemName || isNaN(quantity)) {
+                                alert('Пожалуйста, заполните все обязательные поля корректно!');
+                                isValid = false;
+                                return;
+                            }
                             
                             if (quantity < 0) {
                                 alert('Количество не может быть отрицательным!');
+                                isValid = false;
                                 return;
                             }
                             
                             formData = {
-                                name: document.getElementById('editItemName').value.trim(),
+                                name: itemName,
                                 quantity: quantity.toString(),
-                                category: document.getElementById('editItemCategory').value,
+                                category: category,
                                 updated: new Date().toISOString().split('T')[0]
                             };
-                            
-                            if (!formData.name || isNaN(quantity)) {
-                                alert('Пожалуйста, заполните все обязательные поля корректно!');
-                                return;
-                            }
                             break;
                     }
                     
+                    if (!isValid) return;
+                    
                     if (id) {
-                        // Edit existing item - находим индекс и обновляем
+                        // Edit existing item
                         const index = mockData[type].findIndex(item => item.id === id);
                         if (index !== -1) {
                             // Сохраняем ID и обновляем остальные поля
                             mockData[type][index] = { 
-                                ...mockData[type][index], 
+                                id: id,
                                 ...formData 
                             };
-                            console.log(`Обновлен элемент ${type} с ID ${id}:`, mockData[type][index]);
+                            console.log('Updated item:', mockData[type][index]);
                         } else {
                             alert('Элемент не найден!');
                             return;
                         }
                     } else {
-                        // Add new item - генерируем новый ID
+                        // Add new item
                         const newId = mockData[type].length > 0 
                             ? Math.max(...mockData[type].map(item => item.id)) + 1 
                             : 1;
                             
-                        mockData[type].push({
+                        const newItem = {
                             id: newId,
                             ...formData
-                        });
-                        console.log(`Добавлен новый элемент ${type} с ID ${newId}`);
+                        };
+                        
+                        mockData[type].push(newItem);
+                        console.log('Added new item:', newItem);
                     }
                     
                     // Обновляем интерфейс
@@ -2166,16 +2217,20 @@
                     
                 } catch (error) {
                     console.error('Ошибка при сохранении:', error);
-                    alert('Произошла ошибка при сохранении!');
+                    alert('Произошла ошибка при сохранении! Проверьте консоль для подробностей.');
                 }
             }
             
             // Update statistics
             function updateStats() {
-                document.getElementById('totalMembers').textContent = mockData.members.length;
-                document.getElementById('activeEvents').textContent = mockData.events.filter(e => e.status === 'Запланирован' || e.status === 'В процессе').length;
-                document.getElementById('warehouseItems').textContent = mockData.warehouse.reduce((sum, item) => sum + parseInt(item.quantity), 0);
-                document.getElementById('pendingRequests').textContent = mockData.requests.length;
+                try {
+                    document.getElementById('totalMembers').textContent = mockData.members.length;
+                    document.getElementById('activeEvents').textContent = mockData.events.filter(e => e.status === 'Запланирован' || e.status === 'В процессе').length;
+                    document.getElementById('warehouseItems').textContent = mockData.warehouse.reduce((sum, item) => sum + parseInt(item.quantity || 0), 0);
+                    document.getElementById('pendingRequests').textContent = mockData.requests.length;
+                } catch (error) {
+                    console.error('Error updating stats:', error);
+                }
             }
             
             // Initialize clan members modal
@@ -2614,7 +2669,7 @@
             console.log('📞 Контакты администраторов:', ADMIN_CHAT_IDS);
             console.log('👑 Администраторы:', ADMIN_USERS);
         });
-        //Zero two AI by KAZUHA
+        //Zero two
     </script>
 </body>
 </html>
