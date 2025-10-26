@@ -1687,9 +1687,6 @@
             const warehouseModal = document.getElementById('warehouseModal');
             const closeWarehouseModal = document.getElementById('closeWarehouseModal');
             const warehouseListTable = document.getElementById('warehouseListTable');
-            const addMemberBtn = document.getElementById('addMemberBtn');
-            const addEventBtn = document.getElementById('addEventBtn');
-            const addWarehouseBtn = document.getElementById('addWarehouseBtn');
             const backToMain = document.getElementById('backToMain');
             
             // Telegram bot configuration
@@ -1840,6 +1837,9 @@
                 populateTable('warehouseTable', mockData.warehouse, 'warehouse');
                 populateTable('requestsTable', mockData.requests, 'request');
                 updateStats();
+                
+                // Настраиваем кнопки добавления
+                setupAddButtons();
             }
             
             // Populate table with data
@@ -2144,6 +2144,20 @@
                 }
             }
             
+            // Format event date for display
+            function formatEventDate(dateTimeStr) {
+                try {
+                    const date = new Date(dateTimeStr);
+                    if (isNaN(date.getTime())) {
+                        return new Date().toLocaleString('ru-RU');
+                    }
+                    return date.toLocaleString('ru-RU');
+                } catch (error) {
+                    console.error('Error formatting event date:', error);
+                    return new Date().toLocaleString('ru-RU');
+                }
+            }
+            
             // Get current date time for form
             function getCurrentDateTime() {
                 const now = new Date();
@@ -2156,9 +2170,10 @@
                 return `${year}-${month}-${day}T${hours}:${minutes}`;
             }
             
-            // Save item
+            // Save item - УЛУЧШЕННАЯ ВЕРСИЯ
             function saveItem(type, id) {
-                console.log('🔄 Сохранение:', type, 'ID:', id, 'Текущие данные:', mockData[type]);
+                console.log('🔄 Сохранение:', type, 'ID:', id);
+                console.log('📊 Текущие данные:', mockData[type]);
                 
                 try {
                     if (!mockData[type] || !Array.isArray(mockData[type])) {
@@ -2167,6 +2182,7 @@
                     }
                     
                     let formData = {};
+                    let isValid = true;
                     
                     if (type === 'member') {
                         const nickname = document.getElementById('editNickname')?.value.trim();
@@ -2174,9 +2190,11 @@
                         const rank = document.getElementById('editRank')?.value;
                         const status = document.getElementById('editStatus')?.value;
                         
+                        console.log('👤 Данные участника:', { nickname, telegram, rank, status });
+                        
                         if (!nickname || !telegram) {
                             alert('Заполните все поля!');
-                            return false;
+                            isValid = false;
                         }
                         
                         formData = {
@@ -2192,14 +2210,16 @@
                         const maxParticipants = document.getElementById('editEventMaxParticipants')?.value;
                         const status = document.getElementById('editEventStatus')?.value;
                         
-                        if (!name || !date) {
+                        console.log('🎯 Данные ивента:', { name, date, maxParticipants, status });
+                        
+                        if (!name || !date || !maxParticipants) {
                             alert('Заполните все поля!');
-                            return false;
+                            isValid = false;
                         }
                         
                         formData = {
                             name: name,
-                            date: date.replace('T', ' ') + ':00',
+                            date: formatEventDate(date),
                             participants: `0/${maxParticipants}`,
                             status: status
                         };
@@ -2209,20 +2229,28 @@
                         const quantity = document.getElementById('editItemQuantity')?.value;
                         const category = document.getElementById('editItemCategory')?.value;
                         
+                        console.log('📦 Данные предмета:', { name, quantity, category });
+                        
                         if (!name || !quantity) {
                             alert('Заполните все поля!');
-                            return false;
+                            isValid = false;
                         }
                         
                         formData = {
                             name: name,
                             quantity: quantity,
                             category: category,
-                            updated: new Date().toISOString().split('T')[0]
+                            updated: new Date().toLocaleDateString('ru-RU')
                         };
                     }
                     
+                    if (!isValid) {
+                        console.log('❌ Валидация не пройдена');
+                        return false;
+                    }
+                    
                     if (id) {
+                        // Редактирование существующего элемента
                         const index = mockData[type].findIndex(item => item.id === id);
                         if (index !== -1) {
                             mockData[type][index] = {
@@ -2235,8 +2263,9 @@
                             return false;
                         }
                     } else {
+                        // Добавление нового элемента
                         const newId = mockData[type].length > 0 
-                            ? Math.max(...mockData[type].map(item => item.id)) + 1 
+                            ? Math.max(...mockData[type].map(item => parseInt(item.id) || 0)) + 1 
                             : 1;
                         
                         const newItem = {
@@ -2248,10 +2277,13 @@
                         console.log('✅ Добавлен новый элемент:', newItem);
                     }
                     
+                    // Обновляем интерфейс
                     populateTable(`${type}Table`, mockData[type], type);
                     updateStats();
+                    
                     if (adminModal) adminModal.style.display = 'none';
                     
+                    // Синхронное сохранение
                     const saved = saveData();
                     if (saved) {
                         alert(id ? '✅ Изменения сохранены!' : '✅ Элемент добавлен!');
@@ -2284,6 +2316,60 @@
                 } catch (error) {
                     console.error('Ошибка обновления статистики:', error);
                 }
+            }
+            
+            // Setup add buttons - НОВАЯ ФУНКЦИЯ ДЛЯ КНОПОК ДОБАВЛЕНИЯ
+            function setupAddButtons() {
+                console.log('🔧 Настройка кнопок добавления...');
+                
+                // Ищем кнопки по разным селекторам
+                const addButtons = {
+                    member: document.getElementById('addMemberBtn') || document.querySelector('[onclick*="member"]') || document.querySelector('button:contains("Добавить участника")'),
+                    event: document.getElementById('addEventBtn') || document.querySelector('[onclick*="event"]') || document.querySelector('button:contains("Создать ивент")'),
+                    warehouse: document.getElementById('addWarehouseBtn') || document.querySelector('[onclick*="warehouse"]') || document.querySelector('button:contains("Добавить предмет")')
+                };
+                
+                console.log('Найденные кнопки:', addButtons);
+                
+                // Назначаем обработчики
+                if (addButtons.member) {
+                    addButtons.member.addEventListener('click', () => {
+                        console.log('🎯 Нажата кнопка добавления участника');
+                        openEditModal('member');
+                    });
+                }
+                
+                if (addButtons.event) {
+                    addButtons.event.addEventListener('click', () => {
+                        console.log('🎯 Нажата кнопка создания ивента');
+                        openEditModal('event');
+                    });
+                }
+                
+                if (addButtons.warehouse) {
+                    addButtons.warehouse.addEventListener('click', () => {
+                        console.log('🎯 Нажата кнопка добавления предмета');
+                        openEditModal('warehouse');
+                    });
+                }
+                
+                // Альтернативный поиск по тексту кнопок
+                const allButtons = document.querySelectorAll('button');
+                allButtons.forEach(button => {
+                    const buttonText = button.textContent.toLowerCase();
+                    if (buttonText.includes('добавить участника') || buttonText.includes('add member')) {
+                        console.log('✅ Найдена кнопка добавления участника по тексту');
+                        button.addEventListener('click', () => openEditModal('member'));
+                    }
+                    if (buttonText.includes('создать ивент') || buttonText.includes('add event') || buttonText.includes('create event')) {
+                        console.log('✅ Найдена кнопка создания ивента по тексту');
+                        button.addEventListener('click', () => openEditModal('event'));
+                    }
+                    if (buttonText.includes('добавить предмет') || buttonText.includes('add item') || buttonText.includes('add warehouse')) {
+                        console.log('✅ Найдена кнопка добавления предмета по тексту');
+                        button.addEventListener('click', () => openEditModal('warehouse'));
+                    }
+                });
             }
             
             // Initialize clan members modal
@@ -2468,19 +2554,12 @@
                 });
             });
             
-            // Login form - ИСПРАВЛЕННЫЕ ID
+            // Login form
             if (loginForm) {
                 loginForm.addEventListener('submit', (e) => {
                     e.preventDefault();
-                    // Пробуем разные возможные ID для полей ввода
-                    const username = document.getElementById('loginUsername')?.value || 
-                                   document.getElementById('username')?.value ||
-                                   document.querySelector('#loginForm input[type="text"]')?.value;
-                    const password = document.getElementById('loginPassword')?.value || 
-                                   document.getElementById('password')?.value ||
-                                   document.querySelector('#loginForm input[type="password"]')?.value;
-                    
-                    console.log('Логин - username:', username, 'password:', password);
+                    const username = document.getElementById('loginUsername')?.value;
+                    const password = document.getElementById('loginPassword')?.value;
                     
                     if (username && password) {
                         currentUser = username;
@@ -2500,31 +2579,20 @@
                         }
                     } else {
                         alert('Пожалуйста, заполните все поля!');
-                        console.log('Ошибка: не все поля заполнены');
                     }
                 });
             }
             
-            // Register form - ИСПРАВЛЕННЫЕ ID
+            // Register form
             if (registerForm) {
                 registerForm.addEventListener('submit', (e) => {
                     e.preventDefault();
-                    // Пробуем разные возможные ID для полей ввода
-                    const username = document.getElementById('registerUsername')?.value || 
-                                   document.getElementById('regUsername')?.value ||
-                                   document.querySelector('#registerForm input[type="text"]')?.value;
-                    const password = document.getElementById('registerPassword')?.value || 
-                                   document.getElementById('regPassword')?.value ||
-                                   document.querySelectorAll('#registerForm input[type="password"]')[0]?.value;
-                    const confirmPassword = document.getElementById('registerConfirmPassword')?.value || 
-                                          document.getElementById('regConfirmPassword')?.value ||
-                                          document.querySelectorAll('#registerForm input[type="password"]')[1]?.value;
-                    
-                    console.log('Регистрация - username:', username, 'password:', password, 'confirmPassword:', confirmPassword);
+                    const username = document.getElementById('registerUsername')?.value;
+                    const password = document.getElementById('registerPassword')?.value;
+                    const confirmPassword = document.getElementById('registerConfirmPassword')?.value;
                     
                     if (!username || !password || !confirmPassword) {
                         alert('Пожалуйста, заполните все поля!');
-                        console.log('Ошибка: не все поля заполнены');
                         return;
                     }
                     
@@ -2534,16 +2602,13 @@
                     }
                     
                     if (username && password) {
-                        // Показываем сообщение об успехе
                         if (successMessage) {
                             successMessage.textContent = 'Регистрация успешна! Теперь войдите в систему.';
                             successMessage.style.display = 'block';
                         }
                         
-                        // Очищаем форму
                         registerForm.reset();
                         
-                        // Автоматически переключаем на вкладку входа через 2 секунды
                         setTimeout(() => {
                             if (successMessage) successMessage.style.display = 'none';
                             const loginTab = document.querySelector('[data-tab="login"]');
@@ -2591,25 +2656,6 @@
             if (closeAdminModal) {
                 closeAdminModal.addEventListener('click', () => {
                     if (adminModal) adminModal.style.display = 'none';
-                });
-            }
-            
-            // Add buttons for each section
-            if (addMemberBtn) {
-                addMemberBtn.addEventListener('click', () => {
-                    openEditModal('member');
-                });
-            }
-            
-            if (addEventBtn) {
-                addEventBtn.addEventListener('click', () => {
-                    openEditModal('event');
-                });
-            }
-            
-            if (addWarehouseBtn) {
-                addWarehouseBtn.addEventListener('click', () => {
-                    openEditModal('warehouse');
                 });
             }
             
