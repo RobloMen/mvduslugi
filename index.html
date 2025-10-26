@@ -1640,7 +1640,7 @@
     </footer>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Elements
+            // Elements - с проверками на существование
             const authContainer = document.getElementById('authContainer');
             const mainContent = document.getElementById('mainContent');
             const adminPanel = document.getElementById('adminPanel');
@@ -1793,33 +1793,33 @@
             function updateUI() {
                 if (currentUser) {
                     // User is logged in
-                    loginBtn.style.display = 'none';
-                    registerBtn.style.display = 'none';
-                    userInfo.style.display = 'flex';
-                    logoutBtn.style.display = 'block';
-                    currentUsername.textContent = currentUser;
+                    if (loginBtn) loginBtn.style.display = 'none';
+                    if (registerBtn) registerBtn.style.display = 'none';
+                    if (userInfo) userInfo.style.display = 'flex';
+                    if (logoutBtn) logoutBtn.style.display = 'block';
+                    if (currentUsername) currentUsername.textContent = currentUser;
                     
                     if (isAdmin) {
-                        adminBtn.style.display = 'block';
+                        if (adminBtn) adminBtn.style.display = 'block';
                         console.log('✅ Пользователь является администратором:', currentUser);
                     } else {
-                        adminBtn.style.display = 'none';
+                        if (adminBtn) adminBtn.style.display = 'none';
                         console.log('❌ Пользователь не является администратором:', currentUser);
                     }
                     
-                    authContainer.style.display = 'none';
-                    mainContent.style.display = 'grid';
+                    if (authContainer) authContainer.style.display = 'none';
+                    if (mainContent) mainContent.style.display = 'grid';
                 } else {
                     // User is not logged in
-                    loginBtn.style.display = 'block';
-                    registerBtn.style.display = 'block';
-                    userInfo.style.display = 'none';
-                    logoutBtn.style.display = 'none';
-                    adminBtn.style.display = 'none';
+                    if (loginBtn) loginBtn.style.display = 'block';
+                    if (registerBtn) registerBtn.style.display = 'block';
+                    if (userInfo) userInfo.style.display = 'none';
+                    if (logoutBtn) logoutBtn.style.display = 'none';
+                    if (adminBtn) adminBtn.style.display = 'none';
                     
-                    authContainer.style.display = 'flex';
-                    mainContent.style.display = 'none';
-                    adminPanel.style.display = 'none';
+                    if (authContainer) authContainer.style.display = 'flex';
+                    if (mainContent) mainContent.style.display = 'none';
+                    if (adminPanel) adminPanel.style.display = 'none';
                 }
             }
             
@@ -2099,8 +2099,8 @@
                     `;
                 }
                 
-                adminModalTitle.textContent = title;
-                adminModalContent.innerHTML = `
+                if (adminModalTitle) adminModalTitle.textContent = title;
+                if (adminModalContent) adminModalContent.innerHTML = `
                     <form id="adminEditForm">
                         ${formHTML}
                         <div class="form-group" style="margin-top: 30px;">
@@ -2113,16 +2113,20 @@
                 const adminEditForm = document.getElementById('adminEditForm');
                 const cancelEditBtn = document.getElementById('cancelEditBtn');
                 
-                adminEditForm.onsubmit = (e) => {
-                    e.preventDefault();
-                    saveItem(type, item ? item.id : null);
-                };
+                if (adminEditForm) {
+                    adminEditForm.onsubmit = (e) => {
+                        e.preventDefault();
+                        saveItem(type, item ? item.id : null);
+                    };
+                }
                 
-                cancelEditBtn.onclick = () => {
-                    adminModal.style.display = 'none';
-                };
+                if (cancelEditBtn) {
+                    cancelEditBtn.onclick = () => {
+                        if (adminModal) adminModal.style.display = 'none';
+                    };
+                }
                 
-                adminModal.style.display = 'flex';
+                if (adminModal) adminModal.style.display = 'flex';
             }
             
             // Format date for datetime-local input
@@ -2172,10 +2176,10 @@
                     let formData = {};
                     
                     if (type === 'member') {
-                        const nickname = document.getElementById('editNickname').value.trim();
-                        const telegram = document.getElementById('editTelegram').value.trim();
-                        const rank = document.getElementById('editRank').value;
-                        const status = document.getElementById('editStatus').value;
+                        const nickname = document.getElementById('editNickname')?.value.trim();
+                        const telegram = document.getElementById('editTelegram')?.value.trim();
+                        const rank = document.getElementById('editRank')?.value;
+                        const status = document.getElementById('editStatus')?.value;
                         
                         if (!nickname || !telegram) {
                             alert('Заполните все поля!');
@@ -2190,10 +2194,10 @@
                         };
                     }
                     else if (type === 'event') {
-                        const name = document.getElementById('editEventName').value.trim();
-                        const date = document.getElementById('editEventDate').value;
-                        const maxParticipants = document.getElementById('editEventMaxParticipants').value;
-                        const status = document.getElementById('editEventStatus').value;
+                        const name = document.getElementById('editEventName')?.value.trim();
+                        const date = document.getElementById('editEventDate')?.value;
+                        const maxParticipants = document.getElementById('editEventMaxParticipants')?.value;
+                        const status = document.getElementById('editEventStatus')?.value;
                         
                         if (!name || !date) {
                             alert('Заполните все поля!');
@@ -2208,9 +2212,9 @@
                         };
                     }
                     else if (type === 'warehouse') {
-                        const name = document.getElementById('editItemName').value.trim();
-                        const quantity = document.getElementById('editItemQuantity').value;
-                        const category = document.getElementById('editItemCategory').value;
+                        const name = document.getElementById('editItemName')?.value.trim();
+                        const quantity = document.getElementById('editItemQuantity')?.value;
+                        const category = document.getElementById('editItemCategory')?.value;
                         
                         if (!name || !quantity) {
                             alert('Заполните все поля!');
@@ -2257,7 +2261,7 @@
                     // Обновляем интерфейс
                     populateTable(`${type}Table`, mockData[type], type);
                     updateStats();
-                    adminModal.style.display = 'none';
+                    if (adminModal) adminModal.style.display = 'none';
                     
                     // Синхронное сохранение
                     const saved = saveData();
@@ -2280,10 +2284,15 @@
             // Update statistics
             function updateStats() {
                 try {
-                    document.getElementById('totalMembers').textContent = mockData.members ? mockData.members.length : 0;
-                    document.getElementById('activeEvents').textContent = mockData.events ? mockData.events.filter(e => e.status === 'Запланирован' || e.status === 'В процессе').length : 0;
-                    document.getElementById('warehouseItems').textContent = mockData.warehouse ? mockData.warehouse.reduce((sum, item) => sum + parseInt(item.quantity || 0), 0) : 0;
-                    document.getElementById('pendingRequests').textContent = mockData.requests ? mockData.requests.length : 0;
+                    const totalMembersEl = document.getElementById('totalMembers');
+                    const activeEventsEl = document.getElementById('activeEvents');
+                    const warehouseItemsEl = document.getElementById('warehouseItems');
+                    const pendingRequestsEl = document.getElementById('pendingRequests');
+                    
+                    if (totalMembersEl) totalMembersEl.textContent = mockData.members ? mockData.members.length : 0;
+                    if (activeEventsEl) activeEventsEl.textContent = mockData.events ? mockData.events.filter(e => e.status === 'Запланирован' || e.status === 'В процессе').length : 0;
+                    if (warehouseItemsEl) warehouseItemsEl.textContent = mockData.warehouse ? mockData.warehouse.reduce((sum, item) => sum + parseInt(item.quantity || 0), 0) : 0;
+                    if (pendingRequestsEl) pendingRequestsEl.textContent = mockData.requests ? mockData.requests.length : 0;
                 } catch (error) {
                     console.error('Ошибка обновления статистики:', error);
                 }
@@ -2291,6 +2300,8 @@
             
             // Initialize clan members modal
             function initializeClanMembersModal() {
+                if (!clanMembersTable) return;
+                
                 clanMembersTable.innerHTML = '';
                 
                 if (!mockData.members || !Array.isArray(mockData.members)) {
@@ -2320,12 +2331,17 @@
                     clanMembersTable.appendChild(row);
                 });
                 
-                document.getElementById('totalMembersCount').textContent = mockData.members.length;
-                document.getElementById('activeMembersCount').textContent = mockData.members.filter(m => m.status === 'Активен').length;
+                const totalMembersCount = document.getElementById('totalMembersCount');
+                const activeMembersCount = document.getElementById('activeMembersCount');
+                
+                if (totalMembersCount) totalMembersCount.textContent = mockData.members.length;
+                if (activeMembersCount) activeMembersCount.textContent = mockData.members.filter(m => m.status === 'Активен').length;
             }
             
             // Initialize events modal
             function initializeEventsModal() {
+                if (!eventsListTable) return;
+                
                 eventsListTable.innerHTML = '';
                 
                 if (!mockData.events || !Array.isArray(mockData.events)) {
@@ -2359,12 +2375,17 @@
                     eventsListTable.appendChild(row);
                 });
                 
-                document.getElementById('totalEventsCount').textContent = mockData.events.length;
-                document.getElementById('activeEventsCount').textContent = mockData.events.filter(e => e.status === 'Запланирован' || e.status === 'В процессе').length;
+                const totalEventsCount = document.getElementById('totalEventsCount');
+                const activeEventsCount = document.getElementById('activeEventsCount');
+                
+                if (totalEventsCount) totalEventsCount.textContent = mockData.events.length;
+                if (activeEventsCount) activeEventsCount.textContent = mockData.events.filter(e => e.status === 'Запланирован' || e.status === 'В процессе').length;
             }
             
             // Initialize warehouse modal
             function initializeWarehouseModal() {
+                if (!warehouseListTable) return;
+                
                 warehouseListTable.innerHTML = '';
                 
                 if (!mockData.warehouse || !Array.isArray(mockData.warehouse)) {
@@ -2390,7 +2411,8 @@
                     warehouseListTable.appendChild(row);
                 });
                 
-                document.getElementById('totalItemsCount').textContent = mockData.warehouse.reduce((sum, item) => sum + parseInt(item.quantity), 0);
+                const totalItemsCount = document.getElementById('totalItemsCount');
+                if (totalItemsCount) totalItemsCount.textContent = mockData.warehouse.reduce((sum, item) => sum + parseInt(item.quantity), 0);
             }
             
             // Send message to member
@@ -2442,7 +2464,7 @@
                 });
             }
             
-            // Event Listeners
+            // Event Listeners - с проверками на существование элементов
             
             // Auth tabs
             authTabs.forEach(tab => {
@@ -2453,71 +2475,85 @@
                     authForms.forEach(f => f.classList.remove('active'));
                     
                     tab.classList.add('active');
-                    document.getElementById(`${target}Form`).classList.add('active');
+                    const targetForm = document.getElementById(`${target}Form`);
+                    if (targetForm) targetForm.classList.add('active');
                 });
             });
             
             // Login form
-            loginForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const username = document.getElementById('loginUsername').value;
-                const password = document.getElementById('loginPassword').value;
-                
-                if (username && password) {
-                    currentUser = username;
-                    isAdmin = checkAdmin(username);
-                    updateUI();
+            if (loginForm) {
+                loginForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const username = document.getElementById('loginUsername')?.value;
+                    const password = document.getElementById('loginPassword')?.value;
                     
-                    if (isAdmin) {
-                        initializeAdminPanel();
+                    if (username && password) {
+                        currentUser = username;
+                        isAdmin = checkAdmin(username);
+                        updateUI();
+                        
+                        if (isAdmin) {
+                            initializeAdminPanel();
+                        }
+                        
+                        if (successMessage) {
+                            successMessage.textContent = 'Успешный вход!';
+                            successMessage.style.display = 'block';
+                            setTimeout(() => {
+                                successMessage.style.display = 'none';
+                            }, 3000);
+                        }
                     }
-                    
-                    successMessage.textContent = 'Успешный вход!';
-                    successMessage.style.display = 'block';
-                    setTimeout(() => {
-                        successMessage.style.display = 'none';
-                    }, 3000);
-                }
-            });
+                });
+            }
             
             // Register form
-            registerForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const username = document.getElementById('registerUsername').value;
-                const password = document.getElementById('registerPassword').value;
-                const confirmPassword = document.getElementById('registerConfirmPassword').value;
-                
-                if (password !== confirmPassword) {
-                    alert('Пароли не совпадают!');
-                    return;
-                }
-                
-                if (username && password) {
-                    successMessage.textContent = 'Регистрация успешна! Теперь войдите в систему.';
-                    successMessage.style.display = 'block';
+            if (registerForm) {
+                registerForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const username = document.getElementById('registerUsername')?.value;
+                    const password = document.getElementById('registerPassword')?.value;
+                    const confirmPassword = document.getElementById('registerConfirmPassword')?.value;
                     
-                    setTimeout(() => {
-                        successMessage.style.display = 'none';
-                        document.getElementById('loginTab').click();
-                    }, 3000);
-                }
-            });
+                    if (password !== confirmPassword) {
+                        alert('Пароли не совпадают!');
+                        return;
+                    }
+                    
+                    if (username && password) {
+                        if (successMessage) {
+                            successMessage.textContent = 'Регистрация успешна! Теперь войдите в систему.';
+                            successMessage.style.display = 'block';
+                            
+                            setTimeout(() => {
+                                successMessage.style.display = 'none';
+                                const loginTab = document.getElementById('loginTab');
+                                if (loginTab) loginTab.click();
+                            }, 3000);
+                        }
+                    }
+                });
+            }
             
             // Logout
-            logoutBtn.addEventListener('click', () => {
-                currentUser = null;
-                isAdmin = false;
-                updateUI();
-            });
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    currentUser = null;
+                    isAdmin = false;
+                    updateUI();
+                });
+            }
             
             // Admin button
-            adminBtn.addEventListener('click', () => {
-                if (isAdmin) {
-                    adminPanel.style.display = 'block';
-                    mainContent.style.display = 'none';
-                    initializeAdminPanel();
-                }
-            });
+            if (adminBtn) {
+                adminBtn.addEventListener('click', () => {
+                    if (isAdmin) {
+                        if (adminPanel) adminPanel.style.display = 'block';
+                        if (mainContent) mainContent.style.display = 'none';
+                        initializeAdminPanel();
+                    }
+                });
+            }
             
             // Admin tabs
             adminTabs.forEach(tab => {
@@ -2528,36 +2564,53 @@
                     adminContents.forEach(c => c.classList.remove('active'));
                     
                     tab.classList.add('active');
-                    document.getElementById(`${target}Content`).classList.add('active');
+                    const targetContent = document.getElementById(`${target}Content`);
+                    if (targetContent) targetContent.classList.add('active');
                 });
             });
             
             // Close admin modal
-            closeAdminModal.addEventListener('click', () => {
-                adminModal.style.display = 'none';
-            });
+            if (closeAdminModal) {
+                closeAdminModal.addEventListener('click', () => {
+                    if (adminModal) adminModal.style.display = 'none';
+                });
+            }
             
             // Add buttons for each section
-            document.getElementById('addMemberBtn').addEventListener('click', () => {
-                openEditModal('member');
-            });
+            const addMemberBtn = document.getElementById('addMemberBtn');
+            const addEventBtn = document.getElementById('addEventBtn');
+            const addWarehouseBtn = document.getElementById('addWarehouseBtn');
             
-            document.getElementById('addEventBtn').addEventListener('click', () => {
-                openEditModal('event');
-            });
+            if (addMemberBtn) {
+                addMemberBtn.addEventListener('click', () => {
+                    openEditModal('member');
+                });
+            }
             
-            document.getElementById('addWarehouseBtn').addEventListener('click', () => {
-                openEditModal('warehouse');
-            });
+            if (addEventBtn) {
+                addEventBtn.addEventListener('click', () => {
+                    openEditModal('event');
+                });
+            }
+            
+            if (addWarehouseBtn) {
+                addWarehouseBtn.addEventListener('click', () => {
+                    openEditModal('warehouse');
+                });
+            }
             
             // Services modal
-            servicesBtn.addEventListener('click', () => {
-                servicesModal.style.display = 'flex';
-            });
+            if (servicesBtn) {
+                servicesBtn.addEventListener('click', () => {
+                    if (servicesModal) servicesModal.style.display = 'flex';
+                });
+            }
             
-            closeServicesModal.addEventListener('click', () => {
-                servicesModal.style.display = 'none';
-            });
+            if (closeServicesModal) {
+                closeServicesModal.addEventListener('click', () => {
+                    if (servicesModal) servicesModal.style.display = 'none';
+                });
+            }
             
             // Service selection
             serviceOptions.forEach(option => {
@@ -2569,103 +2622,129 @@
             });
             
             // Send service request
-            sendServiceRequest.addEventListener('click', () => {
-                if (!selectedService) {
-                    alert('Пожалуйста, выберите услугу');
-                    return;
-                }
-                
-                if (!currentUser) {
-                    alert('Пожалуйста, войдите в систему');
-                    return;
-                }
-                
-                loadingMessage.style.display = 'block';
-                
-                setTimeout(() => {
-                    loadingMessage.style.display = 'none';
-                    servicesModal.style.display = 'none';
-                    alert(`Запрос на услугу "${selectedService}" отправлен!`);
-                    selectedService = null;
-                    serviceOptions.forEach(opt => opt.classList.remove('selected'));
-                }, 2000);
-            });
+            if (sendServiceRequest) {
+                sendServiceRequest.addEventListener('click', () => {
+                    if (!selectedService) {
+                        alert('Пожалуйста, выберите услугу');
+                        return;
+                    }
+                    
+                    if (!currentUser) {
+                        alert('Пожалуйста, войдите в систему');
+                        return;
+                    }
+                    
+                    if (loadingMessage) loadingMessage.style.display = 'block';
+                    
+                    setTimeout(() => {
+                        if (loadingMessage) loadingMessage.style.display = 'none';
+                        if (servicesModal) servicesModal.style.display = 'none';
+                        alert(`Запрос на услугу "${selectedService}" отправлен!`);
+                        selectedService = null;
+                        serviceOptions.forEach(opt => opt.classList.remove('selected'));
+                    }, 2000);
+                });
+            }
             
             // Theme toggle
-            themeToggle.addEventListener('click', () => {
-                document.body.classList.toggle('dark-theme');
-                themeToggle.innerHTML = document.body.classList.contains('dark-theme') 
-                    ? '<i class="fas fa-sun"></i>' 
-                    : '<i class="fas fa-moon"></i>';
-            });
+            if (themeToggle) {
+                themeToggle.addEventListener('click', () => {
+                    document.body.classList.toggle('dark-theme');
+                    themeToggle.innerHTML = document.body.classList.contains('dark-theme') 
+                        ? '<i class="fas fa-sun"></i>' 
+                        : '<i class="fas fa-moon"></i>';
+                });
+            }
             
             // Donation modal
-            donationBtn.addEventListener('click', () => {
-                donationModal.style.display = 'flex';
-            });
+            if (donationBtn) {
+                donationBtn.addEventListener('click', () => {
+                    if (donationModal) donationModal.style.display = 'flex';
+                });
+            }
             
-            closeDonationModal.addEventListener('click', () => {
-                donationModal.style.display = 'none';
-            });
+            if (closeDonationModal) {
+                closeDonationModal.addEventListener('click', () => {
+                    if (donationModal) donationModal.style.display = 'none';
+                });
+            }
             
-            processDonation.addEventListener('click', () => {
-                const amount = document.getElementById('donationAmount').value;
-                if (amount && parseFloat(amount) > 0) {
-                    alert(`Спасибо за донат ${amount} руб!`);
-                    donationModal.style.display = 'none';
-                } else {
-                    alert('Пожалуйста, введите корректную сумму');
-                }
-            });
+            if (processDonation) {
+                processDonation.addEventListener('click', () => {
+                    const amount = document.getElementById('donationAmount')?.value;
+                    if (amount && parseFloat(amount) > 0) {
+                        alert(`Спасибо за донат ${amount} руб!`);
+                        if (donationModal) donationModal.style.display = 'none';
+                    } else {
+                        alert('Пожалуйста, введите корректную сумму');
+                    }
+                });
+            }
             
             // Clan members modal
-            clanMembersBtn.addEventListener('click', initializeClanMembersModal);
-            clanMembersBtn2.addEventListener('click', initializeClanMembersModal);
+            if (clanMembersBtn) {
+                clanMembersBtn.addEventListener('click', () => {
+                    initializeClanMembersModal();
+                    if (clanMembersModal) clanMembersModal.style.display = 'flex';
+                });
+            }
             
-            clanMembersBtn.addEventListener('click', () => {
-                clanMembersModal.style.display = 'flex';
-            });
+            if (clanMembersBtn2) {
+                clanMembersBtn2.addEventListener('click', () => {
+                    initializeClanMembersModal();
+                    if (clanMembersModal) clanMembersModal.style.display = 'flex';
+                });
+            }
             
-            clanMembersBtn2.addEventListener('click', () => {
-                clanMembersModal.style.display = 'flex';
-            });
-            
-            closeClanMembersModal.addEventListener('click', () => {
-                clanMembersModal.style.display = 'none';
-            });
+            if (closeClanMembersModal) {
+                closeClanMembersModal.addEventListener('click', () => {
+                    if (clanMembersModal) clanMembersModal.style.display = 'none';
+                });
+            }
             
             // Events modal
-            eventsBtn.addEventListener('click', initializeEventsModal);
-            eventsBtn2.addEventListener('click', initializeEventsModal);
+            if (eventsBtn) {
+                eventsBtn.addEventListener('click', () => {
+                    initializeEventsModal();
+                    if (eventsModal) eventsModal.style.display = 'flex';
+                });
+            }
             
-            eventsBtn.addEventListener('click', () => {
-                eventsModal.style.display = 'flex';
-            });
+            if (eventsBtn2) {
+                eventsBtn2.addEventListener('click', () => {
+                    initializeEventsModal();
+                    if (eventsModal) eventsModal.style.display = 'flex';
+                });
+            }
             
-            eventsBtn2.addEventListener('click', () => {
-                eventsModal.style.display = 'flex';
-            });
-            
-            closeEventsModal.addEventListener('click', () => {
-                eventsModal.style.display = 'none';
-            });
+            if (closeEventsModal) {
+                closeEventsModal.addEventListener('click', () => {
+                    if (eventsModal) eventsModal.style.display = 'none';
+                });
+            }
             
             // Warehouse modal
-            warehouseBtn.addEventListener('click', initializeWarehouseModal);
+            if (warehouseBtn) {
+                warehouseBtn.addEventListener('click', () => {
+                    initializeWarehouseModal();
+                    if (warehouseModal) warehouseModal.style.display = 'flex';
+                });
+            }
             
-            warehouseBtn.addEventListener('click', () => {
-                warehouseModal.style.display = 'flex';
-            });
-            
-            closeWarehouseModal.addEventListener('click', () => {
-                warehouseModal.style.display = 'none';
-            });
+            if (closeWarehouseModal) {
+                closeWarehouseModal.addEventListener('click', () => {
+                    if (warehouseModal) warehouseModal.style.display = 'none';
+                });
+            }
             
             // Back to main from admin
-            document.getElementById('backToMain').addEventListener('click', () => {
-                adminPanel.style.display = 'none';
-                mainContent.style.display = 'grid';
-            });
+            const backToMain = document.getElementById('backToMain');
+            if (backToMain) {
+                backToMain.addEventListener('click', () => {
+                    if (adminPanel) adminPanel.style.display = 'none';
+                    if (mainContent) mainContent.style.display = 'grid';
+                });
+            }
     
             // Initialize
             initializeData(); // Инициализируем данные ДО всего
