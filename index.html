@@ -1698,6 +1698,14 @@
                 'mes_generall': '1988845162'
             };
             
+            // Список администраторов (имена пользователей)
+            const ADMIN_USERS = [
+                'mes_generall', '@mes_generall',
+                'mvd_general_rf', '@mvd_general_rf', 
+                'kazuha', '@kazuha',
+                'mvd', '@mvd'
+            ];
+            
             // Selected service
             let selectedService = null;
             let currentUser = null;
@@ -1708,10 +1716,11 @@
                 members: [
                     { id: 1, nickname: 'mvd_general', telegram: '@mvd_general_rf', rank: 'Генерал', status: 'Активен' },
                     { id: 2, nickname: 'mes_generall', telegram: '@mes_generall', rank: 'Генерал', status: 'Активен' },
-                    { id: 3, nickname: 'Soldier_01', telegram: '@soldier01', rank: 'Сержант', status: 'Активен' },
-                    { id: 4, nickname: 'Guard_007', telegram: '@guard007', rank: 'Лейтенант', status: 'Неактивен' },
-                    { id: 5, nickname: 'Builder_Pro', telegram: '@builderpro', rank: 'Капитан', status: 'Активен' },
-                    { id: 6, nickname: 'Scout_Master', telegram: '@scoutmaster', rank: 'Майор', status: 'Активен' }
+                    { id: 3, nickname: 'Kazuha', telegram: '@kazuha', rank: 'Генерал', status: 'Активен' },
+                    { id: 4, nickname: 'Soldier_01', telegram: '@soldier01', rank: 'Сержант', status: 'Активен' },
+                    { id: 5, nickname: 'Guard_007', telegram: '@guard007', rank: 'Лейтенант', status: 'Неактивен' },
+                    { id: 6, nickname: 'Builder_Pro', telegram: '@builderpro', rank: 'Капитан', status: 'Активен' },
+                    { id: 7, nickname: 'Scout_Master', telegram: '@scoutmaster', rank: 'Майор', status: 'Активен' }
                 ],
                 events: [
                     { id: 1, name: 'Рейд на базу врага', date: '2024-01-15 20:00', participants: '12/20', status: 'Запланирован' },
@@ -1742,8 +1751,10 @@
                     
                     if (isAdmin) {
                         adminBtn.style.display = 'block';
+                        console.log('✅ Пользователь является администратором:', currentUser);
                     } else {
                         adminBtn.style.display = 'none';
+                        console.log('❌ Пользователь не является администратором:', currentUser);
                     }
                     
                     authContainer.style.display = 'none';
@@ -1760,6 +1771,22 @@
                     mainContent.style.display = 'none';
                     adminPanel.style.display = 'none';
                 }
+            }
+            
+            // Check if user is admin
+            function checkAdmin(username) {
+                const normalizedUsername = username.toLowerCase().trim();
+                const isAdminUser = ADMIN_USERS.some(admin => 
+                    admin.toLowerCase() === normalizedUsername
+                );
+                
+                console.log('🔍 Проверка прав администратора:');
+                console.log('  Пользователь:', username);
+                console.log('  Нормализованный:', normalizedUsername);
+                console.log('  Администраторы:', ADMIN_USERS);
+                console.log('  Результат:', isAdminUser);
+                
+                return isAdminUser;
             }
             
             // Initialize admin panel data
@@ -2267,8 +2294,7 @@
                 }
                 
                 // Check if user is admin
-                const telegramUsername = username.toLowerCase();
-                isAdmin = telegramUsername === 'mvd_general_rf' || telegramUsername === 'mes_generall';
+                isAdmin = checkAdmin(username);
                 currentUser = username;
                 
                 // Update UI
@@ -2661,6 +2687,7 @@
             console.log('🔧 Проверка подключения к Telegram...');
             console.log('Token:', TELEGRAM_BOT_TOKEN);
             console.log('Admin Chat IDs:', ADMIN_CHAT_IDS);
+            console.log('Admin Users:', ADMIN_USERS);
             
             // Initialize UI
             updateUI();
