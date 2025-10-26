@@ -1794,6 +1794,7 @@
                 populateTable('eventsTable', mockData.events, 'event');
                 populateTable('warehouseTable', mockData.warehouse, 'warehouse');
                 populateTable('requestsTable', mockData.requests, 'request');
+                updateStats();
             }
             
             // Populate table with data
@@ -1888,14 +1889,10 @@
             // Delete item
             function deleteItem(type, id) {
                 if (confirm('Вы уверены, что хотите удалить этот элемент?')) {
-                    // Находим индекс элемента
                     const index = mockData[type].findIndex(item => item.id === id);
                     if (index !== -1) {
-                        // Удаляем элемент из массива
                         mockData[type].splice(index, 1);
-                        // Обновляем таблицу
                         populateTable(`${type}Table`, mockData[type], type);
-                        // Обновляем статистику
                         updateStats();
                         alert('Элемент успешно удален!');
                     } else {
@@ -1911,7 +1908,6 @@
                 
                 if (action === 'accept') {
                     alert(`Заявка от ${request.nickname} принята!`);
-                    // Add to members
                     mockData.members.push({
                         id: mockData.members.length + 1,
                         nickname: request.nickname,
@@ -1923,12 +1919,9 @@
                     alert(`Заявка от ${request.nickname} отклонена!`);
                 }
                 
-                // Remove from requests
                 mockData.requests = mockData.requests.filter(r => r.id !== requestId);
                 populateTable('requestsTable', mockData.requests, 'request');
                 populateTable('membersTable', mockData.members, 'member');
-                
-                // Update stats
                 updateStats();
             }
             
@@ -2039,7 +2032,6 @@
                     </form>
                 `;
                 
-                // Add event listeners
                 const adminEditForm = document.getElementById('adminEditForm');
                 const cancelEditBtn = document.getElementById('cancelEditBtn');
                 
@@ -2058,7 +2050,6 @@
             // Format date for datetime-local input
             function formatDateTimeForInput(dateTimeStr) {
                 try {
-                    // Преобразуем строку в формат, понятный для datetime-local
                     const date = new Date(dateTimeStr);
                     if (isNaN(date.getTime())) {
                         return getCurrentDateTime();
@@ -2088,149 +2079,111 @@
                 return `${year}-${month}-${day}T${hours}:${minutes}`;
             }
             
-            // Save item (add or edit)
+            // Save item (add or edit) - УПРОЩЕННАЯ ВЕРСИЯ
             function saveItem(type, id) {
-                console.log('Saving item:', type, 'ID:', id);
-                
-                let formData = {};
-                let isValid = true;
+                console.log('Сохранение:', type, 'ID:', id);
                 
                 try {
-                    switch (type) {
-                        case 'member':
-                            const nickname = document.getElementById('editNickname').value.trim();
-                            const telegram = document.getElementById('editTelegram').value.trim();
-                            const rank = document.getElementById('editRank').value;
-                            const status = document.getElementById('editStatus').value;
-                            
-                            if (!nickname || !telegram) {
-                                alert('Пожалуйста, заполните все обязательные поля!');
-                                isValid = false;
-                                return;
-                            }
-                            
-                            formData = {
-                                nickname: nickname,
-                                telegram: telegram,
-                                rank: rank,
-                                status: status
-                            };
-                            break;
-                            
-                        case 'event':
-                            const eventName = document.getElementById('editEventName').value.trim();
-                            const eventDate = document.getElementById('editEventDate').value;
-                            const currentParticipants = parseInt(document.getElementById('editEventCurrentParticipants').value);
-                            const maxParticipants = parseInt(document.getElementById('editEventMaxParticipants').value);
-                            const eventStatus = document.getElementById('editEventStatus').value;
-                            
-                            if (!eventName || !eventDate) {
-                                alert('Пожалуйста, заполните все обязательные поля!');
-                                isValid = false;
-                                return;
-                            }
-                            
-                            if (currentParticipants > maxParticipants) {
-                                alert('Текущее количество участников не может превышать максимальное!');
-                                isValid = false;
-                                return;
-                            }
-                            
-                            if (maxParticipants < 1) {
-                                alert('Максимальное количество участников должно быть больше 0!');
-                                isValid = false;
-                                return;
-                            }
-                            
-                            formData = {
-                                name: eventName,
-                                date: eventDate.replace('T', ' ') + ':00',
-                                participants: `${currentParticipants}/${maxParticipants}`,
-                                status: eventStatus
-                            };
-                            break;
-                            
-                        case 'warehouse':
-                            const itemName = document.getElementById('editItemName').value.trim();
-                            const quantity = parseInt(document.getElementById('editItemQuantity').value);
-                            const category = document.getElementById('editItemCategory').value;
-                            
-                            if (!itemName || isNaN(quantity)) {
-                                alert('Пожалуйста, заполните все обязательные поля корректно!');
-                                isValid = false;
-                                return;
-                            }
-                            
-                            if (quantity < 0) {
-                                alert('Количество не может быть отрицательным!');
-                                isValid = false;
-                                return;
-                            }
-                            
-                            formData = {
-                                name: itemName,
-                                quantity: quantity.toString(),
-                                category: category,
-                                updated: new Date().toISOString().split('T')[0]
-                            };
-                            break;
-                    }
+                    let newItem = {};
                     
-                    if (!isValid) return;
-                    
-                    if (id) {
-                        // Edit existing item
-                        const index = mockData[type].findIndex(item => item.id === id);
-                        if (index !== -1) {
-                            // Сохраняем ID и обновляем остальные поля
-                            mockData[type][index] = { 
-                                id: id,
-                                ...formData 
-                            };
-                            console.log('Updated item:', mockData[type][index]);
-                        } else {
-                            alert('Элемент не найден!');
+                    if (type === 'member') {
+                        const nickname = document.getElementById('editNickname').value;
+                        const telegram = document.getElementById('editTelegram').value;
+                        const rank = document.getElementById('editRank').value;
+                        const status = document.getElementById('editStatus').value;
+                        
+                        if (!nickname || !telegram) {
+                            alert('Заполните все поля!');
                             return;
                         }
+                        
+                        newItem = {
+                            nickname: nickname,
+                            telegram: telegram,
+                            rank: rank,
+                            status: status
+                        };
+                    }
+                    else if (type === 'event') {
+                        const name = document.getElementById('editEventName').value;
+                        const date = document.getElementById('editEventDate').value;
+                        const currentParticipants = document.getElementById('editEventCurrentParticipants').value;
+                        const maxParticipants = document.getElementById('editEventMaxParticipants').value;
+                        const status = document.getElementById('editEventStatus').value;
+                        
+                        if (!name || !date) {
+                            alert('Заполните все поля!');
+                            return;
+                        }
+                        
+                        newItem = {
+                            name: name,
+                            date: date.replace('T', ' ') + ':00',
+                            participants: currentParticipants + '/' + maxParticipants,
+                            status: status
+                        };
+                    }
+                    else if (type === 'warehouse') {
+                        const name = document.getElementById('editItemName').value;
+                        const quantity = document.getElementById('editItemQuantity').value;
+                        const category = document.getElementById('editItemCategory').value;
+                        
+                        if (!name || !quantity) {
+                            alert('Заполните все поля!');
+                            return;
+                        }
+                        
+                        newItem = {
+                            name: name,
+                            quantity: quantity,
+                            category: category,
+                            updated: new Date().toISOString().split('T')[0]
+                        };
+                    }
+                    
+                    if (id) {
+                        // Редактирование существующего элемента
+                        const index = mockData[type].findIndex(item => item.id == id);
+                        if (index !== -1) {
+                            // Сохраняем старый ID и обновляем данные
+                            mockData[type][index] = {
+                                ...mockData[type][index],
+                                ...newItem
+                            };
+                            console.log('Обновлен элемент:', mockData[type][index]);
+                        }
                     } else {
-                        // Add new item
+                        // Добавление нового элемента
                         const newId = mockData[type].length > 0 
                             ? Math.max(...mockData[type].map(item => item.id)) + 1 
                             : 1;
-                            
-                        const newItem = {
-                            id: newId,
-                            ...formData
-                        };
                         
-                        mockData[type].push(newItem);
-                        console.log('Added new item:', newItem);
+                        mockData[type].push({
+                            id: newId,
+                            ...newItem
+                        });
+                        console.log('Добавлен новый элемент:', newItem);
                     }
                     
-                    // Обновляем интерфейс
+                    // Обновляем таблицу и статистику
                     populateTable(`${type}Table`, mockData[type], type);
-                    adminModal.style.display = 'none';
                     updateStats();
+                    adminModal.style.display = 'none';
                     
-                    // Показать уведомление об успешном сохранении
-                    alert(id ? 'Изменения сохранены!' : 'Элемент успешно добавлен!');
+                    alert(id ? 'Изменения сохранены!' : 'Элемент добавлен!');
                     
                 } catch (error) {
-                    console.error('Ошибка при сохранении:', error);
-                    alert('Произошла ошибка при сохранении! Проверьте консоль для подробностей.');
+                    console.error('Ошибка сохранения:', error);
+                    alert('Ошибка при сохранении!');
                 }
             }
             
             // Update statistics
             function updateStats() {
-                try {
-                    document.getElementById('totalMembers').textContent = mockData.members.length;
-                    document.getElementById('activeEvents').textContent = mockData.events.filter(e => e.status === 'Запланирован' || e.status === 'В процессе').length;
-                    document.getElementById('warehouseItems').textContent = mockData.warehouse.reduce((sum, item) => sum + parseInt(item.quantity || 0), 0);
-                    document.getElementById('pendingRequests').textContent = mockData.requests.length;
-                } catch (error) {
-                    console.error('Error updating stats:', error);
-                }
+                document.getElementById('totalMembers').textContent = mockData.members.length;
+                document.getElementById('activeEvents').textContent = mockData.events.filter(e => e.status === 'Запланирован' || e.status === 'В процессе').length;
+                document.getElementById('warehouseItems').textContent = mockData.warehouse.reduce((sum, item) => sum + parseInt(item.quantity), 0);
+                document.getElementById('pendingRequests').textContent = mockData.requests.length;
             }
             
             // Initialize clan members modal
@@ -2327,7 +2280,6 @@
                 const message = prompt(`Введите сообщение для ${telegram}:`);
                 if (message) {
                     alert(`Сообщение отправлено ${telegram}: "${message}"`);
-                    // В реальном приложении здесь будет интеграция с Telegram API
                 }
             };
             
@@ -2364,18 +2316,13 @@
             
             // Send Telegram notification
             function sendTelegramNotification(message) {
-                // В реальном приложении здесь будет отправка через Telegram Bot API
                 console.log('Telegram notification:', message);
-                
-                // Имитация отправки уведомлений администраторам
                 Object.values(ADMIN_CHAT_IDS).forEach(chatId => {
                     console.log(`Отправка сообщения ${chatId}: ${message}`);
-                    // fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`);
                 });
             }
             
             // Event Listeners
-            // Auth tabs
             authTabs.forEach(tab => {
                 tab.addEventListener('click', () => {
                     const tabName = tab.getAttribute('data-tab');
@@ -2388,14 +2335,12 @@
                 });
             });
             
-            // Login form
             loginForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 
                 const username = document.getElementById('loginEmail').value;
                 const password = document.getElementById('loginPassword').value;
                 
-                // Simple authentication
                 if (username && password) {
                     currentUser = username;
                     isAdmin = checkAdmin(username);
@@ -2404,17 +2349,14 @@
                     
                     if (isAdmin) {
                         initializeAdminPanel();
-                        updateStats();
                     }
                     
-                    // Reset form
                     loginForm.reset();
                 } else {
                     alert('Пожалуйста, заполните все поля!');
                 }
             });
             
-            // Register form
             registerForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 
@@ -2430,16 +2372,13 @@
                 }
                 
                 if (username && telegram && rank && password) {
-                    // Show loading
                     document.querySelector('.auth-form.active').style.display = 'none';
                     loadingMessage.style.display = 'block';
                     
-                    // Simulate API request
                     setTimeout(() => {
                         loadingMessage.style.display = 'none';
                         successMessage.style.display = 'block';
                         
-                        // Add to mock requests
                         const newRequest = {
                             id: mockData.requests.length + 1,
                             nickname: username,
@@ -2449,11 +2388,7 @@
                         };
                         
                         mockData.requests.push(newRequest);
-                        
-                        // Send notification to admin
                         sendTelegramNotification(`Новая заявка на вступление от ${username} (${telegram})`);
-                        
-                        // Reset form
                         registerForm.reset();
                     }, 2000);
                 } else {
@@ -2461,7 +2396,6 @@
                 }
             });
             
-            // Service options selection
             serviceOptions.forEach(option => {
                 option.addEventListener('click', () => {
                     serviceOptions.forEach(o => o.classList.remove('selected'));
@@ -2470,7 +2404,6 @@
                 });
             });
             
-            // Send service request
             sendServiceRequest.addEventListener('click', () => {
                 const username = document.getElementById('serviceUsername').value;
                 
@@ -2484,7 +2417,6 @@
                     return;
                 }
                 
-                // Determine which admin to notify based on service
                 let adminToNotify = '';
                 const mvdServices = ['protection', 'resources', 'project_help', 'kolbasa'];
                 const mesServices = ['bot_creation', 'linux_help', 'building_tips', 'scene_creation', 'pvp_training'];
@@ -2501,14 +2433,12 @@
                     alert(`Заявка отправлена администратору ${adminToNotify}!`);
                     servicesModal.style.display = 'none';
                     
-                    // Reset form
                     document.getElementById('serviceUsername').value = '';
                     serviceOptions.forEach(o => o.classList.remove('selected'));
                     selectedService = null;
                 }
             });
             
-            // Admin tabs
             adminTabs.forEach(tab => {
                 tab.addEventListener('click', () => {
                     const tabName = tab.getAttribute('data-tab');
@@ -2521,16 +2451,13 @@
                 });
             });
             
-            // Admin buttons
             document.getElementById('addMemberBtn').addEventListener('click', () => openEditModal('member'));
             document.getElementById('addEventBtn').addEventListener('click', () => openEditModal('event'));
             document.getElementById('addItemBtn').addEventListener('click', () => openEditModal('warehouse'));
             
-            // Theme toggle
             themeToggle.addEventListener('change', function() {
                 if (this.checked) {
                     document.body.classList.add('liquid-glass');
-                    // Show performance warning after 3 seconds
                     setTimeout(() => {
                         performanceWarning.style.display = 'block';
                         setTimeout(() => {
@@ -2542,7 +2469,6 @@
                 }
             });
             
-            // Donation
             donationBtn.addEventListener('click', () => {
                 donationModal.style.display = 'flex';
             });
@@ -2563,12 +2489,10 @@
                 alert(`Спасибо за взнос ${amount} руб.! Средства пойдут на развитие клана.`);
                 donationModal.style.display = 'none';
                 
-                // Reset form
                 document.getElementById('donationAmount').value = '';
                 document.getElementById('donationMessage').value = '';
             });
             
-            // Clan members modal
             clanMembersBtn.addEventListener('click', () => {
                 initializeClanMembersModal();
                 clanMembersModal.style.display = 'flex';
@@ -2583,7 +2507,6 @@
                 clanMembersModal.style.display = 'none';
             });
             
-            // Events modal
             eventsBtn.addEventListener('click', () => {
                 initializeEventsModal();
                 eventsModal.style.display = 'flex';
@@ -2598,7 +2521,6 @@
                 eventsModal.style.display = 'none';
             });
             
-            // Warehouse modal
             warehouseBtn.addEventListener('click', () => {
                 initializeWarehouseModal();
                 warehouseModal.style.display = 'flex';
@@ -2608,7 +2530,6 @@
                 warehouseModal.style.display = 'none';
             });
             
-            // Modal close events
             closeServicesModal.addEventListener('click', () => {
                 servicesModal.style.display = 'none';
             });
@@ -2617,29 +2538,15 @@
                 adminModal.style.display = 'none';
             });
             
-            // Close modals when clicking outside
             window.addEventListener('click', (e) => {
-                if (e.target === servicesModal) {
-                    servicesModal.style.display = 'none';
-                }
-                if (e.target === adminModal) {
-                    adminModal.style.display = 'none';
-                }
-                if (e.target === donationModal) {
-                    donationModal.style.display = 'none';
-                }
-                if (e.target === clanMembersModal) {
-                    clanMembersModal.style.display = 'none';
-                }
-                if (e.target === eventsModal) {
-                    eventsModal.style.display = 'none';
-                }
-                if (e.target === warehouseModal) {
-                    warehouseModal.style.display = 'none';
-                }
+                if (e.target === servicesModal) servicesModal.style.display = 'none';
+                if (e.target === adminModal) adminModal.style.display = 'none';
+                if (e.target === donationModal) donationModal.style.display = 'none';
+                if (e.target === clanMembersModal) clanMembersModal.style.display = 'none';
+                if (e.target === eventsModal) eventsModal.style.display = 'none';
+                if (e.target === warehouseModal) warehouseModal.style.display = 'none';
             });
             
-            // Admin panel toggle
             adminBtn.addEventListener('click', () => {
                 if (adminPanel.style.display === 'none') {
                     adminPanel.style.display = 'block';
@@ -2651,7 +2558,6 @@
                 }
             });
             
-            // Logout
             logoutBtn.addEventListener('click', () => {
                 currentUser = null;
                 isAdmin = false;
@@ -2664,10 +2570,7 @@
             initializeEventsModal();
             initializeWarehouseModal();
             
-            // Debug info
             console.log('🚀 Система клана МВД инициализирована');
-            console.log('📞 Контакты администраторов:', ADMIN_CHAT_IDS);
-            console.log('👑 Администраторы:', ADMIN_USERS);
         });
         //Zero two
     </script>
