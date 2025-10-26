@@ -1710,33 +1710,49 @@
             let currentUser = null;
             let isAdmin = false;
             
+            // Load data from localStorage or use default
+            function loadData() {
+                const savedData = localStorage.getItem('clanMVDData');
+                if (savedData) {
+                    return JSON.parse(savedData);
+                }
+                
+                // Default data
+                return {
+                    members: [
+                        { id: 1, nickname: 'mvd_general', telegram: '@mvd_general_rf', rank: 'Генерал', status: 'Активен' },
+                        { id: 2, nickname: 'mes_generall', telegram: '@mes_generall', rank: 'Генерал', status: 'Активен' },
+                        { id: 3, nickname: 'Kazuha', telegram: '@kazuha', rank: 'Генерал', status: 'Активен' },
+                        { id: 4, nickname: 'Soldier_01', telegram: '@soldier01', rank: 'Сержант', status: 'Активен' },
+                        { id: 5, nickname: 'Guard_007', telegram: '@guard007', rank: 'Лейтенант', status: 'Неактивен' },
+                        { id: 6, nickname: 'Builder_Pro', telegram: '@builderpro', rank: 'Капитан', status: 'Активен' },
+                        { id: 7, nickname: 'Scout_Master', telegram: '@scoutmaster', rank: 'Майор', status: 'Активен' }
+                    ],
+                    events: [
+                        { id: 1, name: 'Рейд на базу врага', date: '2024-01-15 20:00', participants: '12/20', status: 'Запланирован' },
+                        { id: 2, name: 'Тренировка PvP', date: '2024-01-16 19:00', participants: '8/15', status: 'Запланирован' },
+                        { id: 3, name: 'Сбор ресурсов', date: '2024-01-14 18:00', participants: '15/15', status: 'Завершен' }
+                    ],
+                    warehouse: [
+                        { id: 1, name: 'Алмазы', quantity: '64', category: 'Ресурсы', updated: '2024-01-13' },
+                        { id: 2, name: 'Железо', quantity: '128', category: 'Ресурсы', updated: '2024-01-13' },
+                        { id: 3, name: 'Золото', quantity: '32', category: 'Ресурсы', updated: '2024-01-12' },
+                        { id: 4, name: 'Элитные мечи', quantity: '5', category: 'Оружие', updated: '2024-01-10' }
+                    ],
+                    requests: [
+                        { id: 1, nickname: 'NewPlayer', telegram: '@newplayer', rank: 'Рядовой', date: '2024-01-13' },
+                        { id: 2, nickname: 'ProBuilder', telegram: '@probuilder', rank: 'Сержант', date: '2024-01-12' }
+                    ]
+                };
+            }
+            
+            // Save data to localStorage
+            function saveData() {
+                localStorage.setItem('clanMVDData', JSON.stringify(mockData));
+            }
+            
             // Mock data for admin panel
-            let mockData = {
-                members: [
-                    { id: 1, nickname: 'mvd_general', telegram: '@mvd_general_rf', rank: 'Генерал', status: 'Активен' },
-                    { id: 2, nickname: 'mes_generall', telegram: '@mes_generall', rank: 'Генерал', status: 'Активен' },
-                    { id: 3, nickname: 'Kazuha', telegram: '@kazuha', rank: 'Генерал', status: 'Активен' },
-                    { id: 4, nickname: 'Soldier_01', telegram: '@soldier01', rank: 'Сержант', status: 'Активен' },
-                    { id: 5, nickname: 'Guard_007', telegram: '@guard007', rank: 'Лейтенант', status: 'Неактивен' },
-                    { id: 6, nickname: 'Builder_Pro', telegram: '@builderpro', rank: 'Капитан', status: 'Активен' },
-                    { id: 7, nickname: 'Scout_Master', telegram: '@scoutmaster', rank: 'Майор', status: 'Активен' }
-                ],
-                events: [
-                    { id: 1, name: 'Рейд на базу врага', date: '2024-01-15 20:00', participants: '12/20', status: 'Запланирован' },
-                    { id: 2, name: 'Тренировка PvP', date: '2024-01-16 19:00', participants: '8/15', status: 'Запланирован' },
-                    { id: 3, name: 'Сбор ресурсов', date: '2024-01-14 18:00', participants: '15/15', status: 'Завершен' }
-                ],
-                warehouse: [
-                    { id: 1, name: 'Алмазы', quantity: '64', category: 'Ресурсы', updated: '2024-01-13' },
-                    { id: 2, name: 'Железо', quantity: '128', category: 'Ресурсы', updated: '2024-01-13' },
-                    { id: 3, name: 'Золото', quantity: '32', category: 'Ресурсы', updated: '2024-01-12' },
-                    { id: 4, name: 'Элитные мечи', quantity: '5', category: 'Оружие', updated: '2024-01-10' }
-                ],
-                requests: [
-                    { id: 1, nickname: 'NewPlayer', telegram: '@newplayer', rank: 'Рядовой', date: '2024-01-13' },
-                    { id: 2, nickname: 'ProBuilder', telegram: '@probuilder', rank: 'Сержант', date: '2024-01-12' }
-                ]
-            };
+            let mockData = loadData();
     
             // Update UI based on authentication state
             function updateUI() {
@@ -1894,6 +1910,7 @@
                         mockData[type].splice(index, 1);
                         populateTable(`${type}Table`, mockData[type], type);
                         updateStats();
+                        saveData(); // Сохраняем изменения
                         alert('Элемент успешно удален!');
                     } else {
                         alert('Элемент не найден!');
@@ -1923,6 +1940,7 @@
                 populateTable('requestsTable', mockData.requests, 'request');
                 populateTable('membersTable', mockData.members, 'member');
                 updateStats();
+                saveData(); // Сохраняем изменения
             }
             
             // Open edit modal
@@ -2079,7 +2097,7 @@
                 return `${year}-${month}-${day}T${hours}:${minutes}`;
             }
             
-            // Save item (add or edit) - УПРОЩЕННАЯ ВЕРСИЯ
+            // Save item (add or edit)
             function saveItem(type, id) {
                 console.log('Сохранение:', type, 'ID:', id);
                 
@@ -2087,8 +2105,8 @@
                     let newItem = {};
                     
                     if (type === 'member') {
-                        const nickname = document.getElementById('editNickname').value;
-                        const telegram = document.getElementById('editTelegram').value;
+                        const nickname = document.getElementById('editNickname').value.trim();
+                        const telegram = document.getElementById('editTelegram').value.trim();
                         const rank = document.getElementById('editRank').value;
                         const status = document.getElementById('editStatus').value;
                         
@@ -2105,14 +2123,19 @@
                         };
                     }
                     else if (type === 'event') {
-                        const name = document.getElementById('editEventName').value;
+                        const name = document.getElementById('editEventName').value.trim();
                         const date = document.getElementById('editEventDate').value;
-                        const currentParticipants = document.getElementById('editEventCurrentParticipants').value;
-                        const maxParticipants = document.getElementById('editEventMaxParticipants').value;
+                        const currentParticipants = parseInt(document.getElementById('editEventCurrentParticipants').value);
+                        const maxParticipants = parseInt(document.getElementById('editEventMaxParticipants').value);
                         const status = document.getElementById('editEventStatus').value;
                         
                         if (!name || !date) {
                             alert('Заполните все поля!');
+                            return;
+                        }
+                        
+                        if (currentParticipants > maxParticipants) {
+                            alert('Текущие участники не могут превышать максимум!');
                             return;
                         }
                         
@@ -2124,18 +2147,18 @@
                         };
                     }
                     else if (type === 'warehouse') {
-                        const name = document.getElementById('editItemName').value;
-                        const quantity = document.getElementById('editItemQuantity').value;
+                        const name = document.getElementById('editItemName').value.trim();
+                        const quantity = parseInt(document.getElementById('editItemQuantity').value);
                         const category = document.getElementById('editItemCategory').value;
                         
-                        if (!name || !quantity) {
-                            alert('Заполните все поля!');
+                        if (!name || isNaN(quantity)) {
+                            alert('Заполните все поля корректно!');
                             return;
                         }
                         
                         newItem = {
                             name: name,
-                            quantity: quantity,
+                            quantity: quantity.toString(),
                             category: category,
                             updated: new Date().toISOString().split('T')[0]
                         };
@@ -2143,14 +2166,17 @@
                     
                     if (id) {
                         // Редактирование существующего элемента
-                        const index = mockData[type].findIndex(item => item.id == id);
+                        const index = mockData[type].findIndex(item => item.id === id);
                         if (index !== -1) {
                             // Сохраняем старый ID и обновляем данные
                             mockData[type][index] = {
-                                ...mockData[type][index],
+                                id: id,
                                 ...newItem
                             };
                             console.log('Обновлен элемент:', mockData[type][index]);
+                        } else {
+                            alert('Элемент не найден!');
+                            return;
                         }
                     } else {
                         // Добавление нового элемента
@@ -2169,6 +2195,7 @@
                     populateTable(`${type}Table`, mockData[type], type);
                     updateStats();
                     adminModal.style.display = 'none';
+                    saveData(); // Сохраняем в localStorage
                     
                     alert(id ? 'Изменения сохранены!' : 'Элемент добавлен!');
                     
@@ -2291,6 +2318,7 @@
                     if (current < max) {
                         event.participants = `${current + 1}/${max}`;
                         initializeEventsModal();
+                        saveData(); // Сохраняем изменения
                         alert(`Вы присоединились к ивенту "${event.name}"`);
                     } else {
                         alert('Ивент уже заполнен!');
@@ -2307,6 +2335,7 @@
                         item.quantity = (parseInt(item.quantity) - parseInt(quantity)).toString();
                         item.updated = new Date().toISOString().split('T')[0];
                         initializeWarehouseModal();
+                        saveData(); // Сохраняем изменения
                         alert(`Вы получили ${quantity} ${item.name}`);
                     } else if (quantity) {
                         alert('Неверное количество!');
@@ -2388,6 +2417,7 @@
                         };
                         
                         mockData.requests.push(newRequest);
+                        saveData(); // Сохраняем заявку
                         sendTelegramNotification(`Новая заявка на вступление от ${username} (${telegram})`);
                         registerForm.reset();
                     }, 2000);
@@ -2571,8 +2601,9 @@
             initializeWarehouseModal();
             
             console.log('🚀 Система клана МВД инициализирована');
+            console.log('💾 Данные загружены из localStorage');
         });
-        //Zero two
+        //Zero Two
     </script>
 </body>
 </html>
