@@ -1738,7 +1738,7 @@
                     { id: 2, nickname: 'ProBuilder', telegram: '@probuilder', rank: 'Сержант', date: '2024-01-12' }
                 ]
             };
-
+    
             // Update UI based on authentication state
             function updateUI() {
                 if (currentUser) {
@@ -1806,11 +1806,39 @@
                     const row = document.createElement('tr');
                     
                     // Add columns based on type
-                    Object.values(item).forEach(value => {
-                        const cell = document.createElement('td');
-                        cell.textContent = value;
-                        row.appendChild(cell);
-                    });
+                    if (type === 'member') {
+                        row.innerHTML = `
+                            <td>${item.id}</td>
+                            <td>${item.nickname}</td>
+                            <td>${item.telegram}</td>
+                            <td>${item.rank}</td>
+                            <td>${item.status}</td>
+                        `;
+                    } else if (type === 'event') {
+                        row.innerHTML = `
+                            <td>${item.id}</td>
+                            <td>${item.name}</td>
+                            <td>${item.date}</td>
+                            <td>${item.participants}</td>
+                            <td>${item.status}</td>
+                        `;
+                    } else if (type === 'warehouse') {
+                        row.innerHTML = `
+                            <td>${item.id}</td>
+                            <td>${item.name}</td>
+                            <td>${item.quantity}</td>
+                            <td>${item.category}</td>
+                            <td>${item.updated}</td>
+                        `;
+                    } else if (type === 'request') {
+                        row.innerHTML = `
+                            <td>${item.id}</td>
+                            <td>${item.nickname}</td>
+                            <td>${item.telegram}</td>
+                            <td>${item.rank}</td>
+                            <td>${item.date}</td>
+                        `;
+                    }
                     
                     // Add action buttons
                     const actionsCell = document.createElement('td');
@@ -1853,6 +1881,25 @@
                 });
             }
             
+            // Delete item
+            function deleteItem(type, id) {
+                if (confirm('Вы уверены, что хотите удалить этот элемент?')) {
+                    // Находим индекс элемента
+                    const index = mockData[type].findIndex(item => item.id === id);
+                    if (index !== -1) {
+                        // Удаляем элемент из массива
+                        mockData[type].splice(index, 1);
+                        // Обновляем таблицу
+                        populateTable(`${type}Table`, mockData[type], type);
+                        // Обновляем статистику
+                        updateStats();
+                        alert('Элемент успешно удален!');
+                    } else {
+                        alert('Элемент не найден!');
+                    }
+                }
+            }
+            
             // Handle request actions
             function handleRequestAction(requestId, action) {
                 const request = mockData.requests.find(r => r.id === requestId);
@@ -1879,15 +1926,6 @@
                 
                 // Update stats
                 updateStats();
-            }
-            
-            // Delete item
-            function deleteItem(type, id) {
-                if (confirm('Вы уверены, что хотите удалить этот элемент?')) {
-                    mockData[type] = mockData[type].filter(item => item.id !== id);
-                    populateTable(`${type}Table`, mockData[type], type);
-                    updateStats();
-                }
             }
             
             // Open edit modal
@@ -1930,6 +1968,8 @@
                         break;
                     case 'event':
                         title = isEdit ? 'Редактировать ивент' : 'Создать ивент';
+                        const currentParticipants = isEdit ? item.participants.split('/')[0] : '0';
+                        const maxParticipants = isEdit ? item.participants.split('/')[1] : '20';
                         formHTML = `
                             <div class="form-group">
                                 <label class="form-label">Название ивента</label>
@@ -1940,8 +1980,12 @@
                                 <input type="datetime-local" class="form-input" id="editEventDate" value="${isEdit ? formatDateTimeForInput(item.date) : ''}" required>
                             </div>
                             <div class="form-group">
+                                <label class="form-label">Текущие участники</label>
+                                <input type="number" class="form-input" id="editEventCurrentParticipants" value="${currentParticipants}" required>
+                            </div>
+                            <div class="form-group">
                                 <label class="form-label">Максимум участников</label>
-                                <input type="number" class="form-input" id="editEventMaxParticipants" value="${isEdit ? item.participants.split('/')[1] : '20'}" required>
+                                <input type="number" class="form-input" id="editEventMaxParticipants" value="${maxParticipants}" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Статус</label>
@@ -2009,63 +2053,121 @@
             
             // Format date for datetime-local input
             function formatDateTimeForInput(dateTimeStr) {
+                // Преобразуем строку в формат, понятный для datetime-local
                 const date = new Date(dateTimeStr);
-                return date.toISOString().slice(0, 16);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                
+                return `${year}-${month}-${day}T${hours}:${minutes}`;
             }
             
             // Save item (add or edit)
             function saveItem(type, id) {
                 let formData = {};
                 
-                switch (type) {
-                    case 'member':
-                        formData = {
-                            nickname: document.getElementById('editNickname').value,
-                            telegram: document.getElementById('editTelegram').value,
-                            rank: document.getElementById('editRank').value,
-                            status: document.getElementById('editStatus').value
-                        };
-                        break;
-                    case 'event':
-                        const maxParticipants = document.getElementById('editEventMaxParticipants').value;
-                        formData = {
-                            name: document.getElementById('editEventName').value,
-                            date: document.getElementById('editEventDate').value,
-                            participants: `0/${maxParticipants}`,
-                            status: document.getElementById('editEventStatus').value
-                        };
-                        break;
-                    case 'warehouse':
-                        formData = {
-                            name: document.getElementById('editItemName').value,
-                            quantity: document.getElementById('editItemQuantity').value,
-                            category: document.getElementById('editItemCategory').value,
-                            updated: new Date().toISOString().split('T')[0]
-                        };
-                        break;
-                }
-                
-                if (id) {
-                    // Edit existing item
-                    const index = mockData[type].findIndex(item => item.id === id);
-                    if (index !== -1) {
-                        mockData[type][index] = { ...mockData[type][index], ...formData };
+                try {
+                    switch (type) {
+                        case 'member':
+                            formData = {
+                                nickname: document.getElementById('editNickname').value.trim(),
+                                telegram: document.getElementById('editTelegram').value.trim(),
+                                rank: document.getElementById('editRank').value,
+                                status: document.getElementById('editStatus').value
+                            };
+                            
+                            // Валидация
+                            if (!formData.nickname || !formData.telegram) {
+                                alert('Пожалуйста, заполните все обязательные поля!');
+                                return;
+                            }
+                            break;
+                            
+                        case 'event':
+                            const currentParticipants = parseInt(document.getElementById('editEventCurrentParticipants').value);
+                            const maxParticipants = parseInt(document.getElementById('editEventMaxParticipants').value);
+                            
+                            if (currentParticipants > maxParticipants) {
+                                alert('Текущее количество участников не может превышать максимальное!');
+                                return;
+                            }
+                            
+                            formData = {
+                                name: document.getElementById('editEventName').value.trim(),
+                                date: document.getElementById('editEventDate').value,
+                                participants: `${currentParticipants}/${maxParticipants}`,
+                                status: document.getElementById('editEventStatus').value
+                            };
+                            
+                            if (!formData.name || !formData.date) {
+                                alert('Пожалуйста, заполните все обязательные поля!');
+                                return;
+                            }
+                            break;
+                            
+                        case 'warehouse':
+                            const quantity = parseInt(document.getElementById('editItemQuantity').value);
+                            
+                            if (quantity < 0) {
+                                alert('Количество не может быть отрицательным!');
+                                return;
+                            }
+                            
+                            formData = {
+                                name: document.getElementById('editItemName').value.trim(),
+                                quantity: quantity.toString(),
+                                category: document.getElementById('editItemCategory').value,
+                                updated: new Date().toISOString().split('T')[0]
+                            };
+                            
+                            if (!formData.name || isNaN(quantity)) {
+                                alert('Пожалуйста, заполните все обязательные поля корректно!');
+                                return;
+                            }
+                            break;
                     }
-                } else {
-                    // Add new item
-                    const newId = Math.max(...mockData[type].map(item => item.id)) + 1;
-                    mockData[type].push({
-                        id: newId,
-                        ...formData
-                    });
+                    
+                    if (id) {
+                        // Edit existing item - находим индекс и обновляем
+                        const index = mockData[type].findIndex(item => item.id === id);
+                        if (index !== -1) {
+                            // Сохраняем ID и обновляем остальные поля
+                            mockData[type][index] = { 
+                                ...mockData[type][index], 
+                                ...formData 
+                            };
+                            console.log(`Обновлен элемент ${type} с ID ${id}:`, mockData[type][index]);
+                        } else {
+                            alert('Элемент не найден!');
+                            return;
+                        }
+                    } else {
+                        // Add new item - генерируем новый ID
+                        const newId = mockData[type].length > 0 
+                            ? Math.max(...mockData[type].map(item => item.id)) + 1 
+                            : 1;
+                            
+                        mockData[type].push({
+                            id: newId,
+                            ...formData
+                        });
+                        console.log(`Добавлен новый элемент ${type} с ID ${newId}`);
+                    }
+                    
+                    // Обновляем интерфейс
+                    populateTable(`${type}Table`, mockData[type], type);
+                    adminModal.style.display = 'none';
+                    updateStats();
+                    
+                    // Показать уведомление об успешном сохранении
+                    alert(id ? 'Изменения сохранены!' : 'Элемент успешно добавлен!');
+                    
+                } catch (error) {
+                    console.error('Ошибка при сохранении:', error);
+                    alert('Произошла ошибка при сохранении!');
                 }
-                
-                populateTable(`${type}Table`, mockData[type], type);
-                adminModal.style.display = 'none';
-                updateStats();
-                
-                // Показать уведомление об успешном сохранении
-                alert(id ? 'Изменения сохранены!' : 'Элемент успешно добавлен!');
             }
             
             // Update statistics
@@ -2205,6 +2307,18 @@
                 }
             };
             
+            // Send Telegram notification
+            function sendTelegramNotification(message) {
+                // В реальном приложении здесь будет отправка через Telegram Bot API
+                console.log('Telegram notification:', message);
+                
+                // Имитация отправки уведомлений администраторам
+                Object.values(ADMIN_CHAT_IDS).forEach(chatId => {
+                    console.log(`Отправка сообщения ${chatId}: ${message}`);
+                    // fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`);
+                });
+            }
+            
             // Event Listeners
             // Auth tabs
             authTabs.forEach(tab => {
@@ -2291,18 +2405,6 @@
                     alert('Пожалуйста, заполните все поля!');
                 }
             });
-            
-            // Send Telegram notification
-            function sendTelegramNotification(message) {
-                // В реальном приложении здесь будет отправка через Telegram Bot API
-                console.log('Telegram notification:', message);
-                
-                // Имитация отправки уведомлений администраторам
-                Object.values(ADMIN_CHAT_IDS).forEach(chatId => {
-                    console.log(`Отправка сообщения ${chatId}: ${message}`);
-                    // fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`);
-                });
-            }
             
             // Service options selection
             serviceOptions.forEach(option => {
@@ -2487,6 +2589,7 @@
                 if (adminPanel.style.display === 'none') {
                     adminPanel.style.display = 'block';
                     mainContent.style.display = 'none';
+                    initializeAdminPanel();
                 } else {
                     adminPanel.style.display = 'none';
                     mainContent.style.display = 'grid';
@@ -2511,6 +2614,7 @@
             console.log('📞 Контакты администраторов:', ADMIN_CHAT_IDS);
             console.log('👑 Администраторы:', ADMIN_USERS);
         });
+        //Zero two AI by KAZUHA
     </script>
 </body>
 </html>
