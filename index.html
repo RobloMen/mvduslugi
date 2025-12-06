@@ -1827,6 +1827,12 @@
                 pendingRequests: document.getElementById('pendingRequests')
             };
         
+            // ID администраторов (они уже начали диалог с ботом)
+            const ADMIN_CHAT_IDS = {
+                'mvd_general_RF': '6064583804',
+                'mes_generall': '1988845162'
+            };
+            
             // Список администраторов (по username)
             const ADMIN_USERS = [
                 'mes_generall', '@mes_generall',
@@ -1885,63 +1891,12 @@
                 saveData();
             }
         
-            // ==================== ПОИСК USER ID ПО TELEGRAM USERNAME ====================
-        
-            async function getTelegramUserId(username) {
-                console.log(`🔍 Поиск User ID для: ${username}`);
-                
-                try {
-                    // Сначала пытаемся получить chat_id через getUpdates
-                    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates`;
-                    const response = await fetch(url);
-                    const data = await response.json();
-                    
-                    if (data.ok && data.result.length > 0) {
-                        const cleanUsername = username.startsWith('@') ? username.substring(1) : username;
-                        
-                        // Ищем пользователя в обновлениях
-                        for (const update of data.result) {
-                            if (update.message) {
-                                const from = update.message.from;
-                                const chat = update.message.chat;
-                                
-                                // Проверяем username или first_name
-                                if ((from.username && from.username.toLowerCase() === cleanUsername.toLowerCase()) ||
-                                    (from.first_name && from.first_name.toLowerCase() === cleanUsername.toLowerCase())) {
-                                    console.log(`✅ Найден User ID: ${from.id} для ${username}`);
-                                    return from.id;
-                                }
-                                
-                                // Также проверяем chat
-                                if (chat.username && chat.username.toLowerCase() === cleanUsername.toLowerCase()) {
-                                    console.log(`✅ Найден Chat ID: ${chat.id} для ${username}`);
-                                    return chat.id;
-                                }
-                            }
-                        }
-                    }
-                    
-                    console.log('❌ User ID не найден в getUpdates, пробуем отправку напрямую...');
-                    return username; // Возвращаем username как fallback
-                } catch (error) {
-                    console.error('❌ Ошибка при поиске User ID:', error);
-                    return username; // Возвращаем username как fallback
-                }
-            }
-        
             // ==================== ОТПРАВКА СООБЩЕНИЙ В TELEGRAM ====================
         
-            async function sendTelegramMessage(chatIdOrUsername, message) {
-                console.log(`📤 Отправка сообщения на: ${chatIdOrUsername}`);
+            async function sendTelegramMessage(chatId, message) {
+                console.log(`📤 Отправка сообщения на Chat ID: ${chatId}`);
                 
                 try {
-                    // Проверяем, является ли chatIdOrUsername числом (User ID)
-                    let chatId = chatIdOrUsername;
-                    if (isNaN(chatIdOrUsername) || chatIdOrUsername.toString().startsWith('@')) {
-                        // Это username, пробуем найти User ID
-                        chatId = await getTelegramUserId(chatIdOrUsername);
-                    }
-                    
                     const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
                     
                     const response = await fetch(url, {
@@ -1963,13 +1918,6 @@
                         return true;
                     } else {
                         console.error('❌ Ошибка отправки Telegram:', data);
-                        
-                        // Пробуем отправить через администраторов как fallback
-                        if (data.error_code === 400 || data.description.includes('chat not found')) {
-                            console.log('🔄 Пробуем отправить через администраторов...');
-                            return await sendViaAdmins(chatIdOrUsername, message);
-                        }
-                        
                         return false;
                     }
                 } catch (error) {
@@ -1978,82 +1926,67 @@
                 }
             }
         
-            async function sendViaAdmins(username, message) {
-                console.log(`🔄 Отправка через администраторов для: ${username}`);
-                
-                const adminMessage = `📢 <b>СООБЩЕНИЕ ДЛЯ ПОЛЬЗОВАТЕЛЯ</b>\n\n👤 Пользователь: ${username}\n\n💬 Сообщение:\n${message}\n\n⚠️ Пожалуйста, перешлите это сообщение пользователю!`;
-                
-                // Список администраторов для отправки
-                const adminChatIds = [
-                    '6064583804', // mvd_general_RF
-                    '1988845162'  // mes_generall
-                ];
-                
-                for (const chatId of adminChatIds) {
-                    try {
-                        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-                        const response = await fetch(url, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                chat_id: chatId,
-                                text: adminMessage,
-                                parse_mode: 'HTML'
-                            })
-                        });
-                        
-                        const data = await response.json();
-                        if (data.ok) {
-                            console.log(`✅ Сообщение отправлено администратору ${chatId}`);
-                            return true;
-                        }
-                    } catch (error) {
-                        console.error(`❌ Ошибка отправки администратору ${chatId}:`, error);
-                    }
-                }
-                
-                return false;
-            }
-        
-            // Функция для отправки кода верификации
+            // Функция для отправки кода верификации через администраторов
             async function sendVerificationCode(telegramUsername, code) {
-                console.log(`📤 Отправка кода ${code} пользователю ${telegramUsername}`);
+                console.log(`📤 Отправка кода ${code} для пользователя ${telegramUsername}`);
                 
                 const cleanUsername = telegramUsername.startsWith('@') ? telegramUsername : `@${telegramUsername}`;
-                const message = `🔐 <b>Код верификации для клана МВД</b>\n\n✅ Ваш код подтверждения: <code>${code}</code>\n\n📋 Используйте этот код для завершения регистрации в системе клана МВД.\n\n⏰ Код действителен 10 минут.\n\n⚠️ Никому не сообщайте этот код!`;
                 
-                // Пытаемся отправить напрямую пользователю
-                try {
-                    const sent = await sendTelegramMessage(cleanUsername, message);
-                    
-                    if (sent) {
-                        console.log(`✅ Код отправлен пользователю: ${cleanUsername}`);
-                        return true;
-                    } else {
-                        console.log('❌ Не удалось отправить напрямую, пробуем через администраторов...');
+                // Сообщение для администраторов
+                const adminMessage = `🔐 <b>ВЕРИФИКАЦИЯ ДЛЯ КЛАНА МВД</b>\n\n👤 <b>Пользователь:</b> ${cleanUsername}\n🔢 <b>Код верификации:</b> <code>${code}</code>\n\n📝 <b>Инструкция:</b>\n1. Найдите пользователя ${cleanUsername} в Telegram\n2. Перешлите ему этот код\n3. Скажите ему ввести код на сайте\n\n⏰ <b>Код действителен 10 минут</b>\n\n⚠️ <b>НИКОМУ НЕ СООБЩАЙТЕ ЭТОТ КОД, КРОМЕ ПОЛЬЗОВАТЕЛЯ!</b>`;
+                
+                // Отправляем всем администраторам
+                let successCount = 0;
+                
+                for (const [adminName, chatId] of Object.entries(ADMIN_CHAT_IDS)) {
+                    try {
+                        console.log(`🔄 Отправка администратору ${adminName} (${chatId})...`);
+                        const sent = await sendTelegramMessage(chatId, adminMessage);
                         
-                        // Пробуем через администраторов как fallback
-                        const adminMessage = `🔐 <b>ВЕРИФИКАЦИЯ ДЛЯ КЛАНА МВД</b>\n\n👤 Пользователь: ${cleanUsername}\n🔢 Код верификации: <code>${code}</code>\n\n⚠️ Пожалуйста, перешлите этот код пользователю для завершения регистрации!`;
-                        
-                        const adminChatIds = ['6064583804', '1988845162'];
-                        for (const chatId of adminChatIds) {
-                            const adminSent = await sendTelegramMessage(chatId, adminMessage);
-                            if (adminSent) {
-                                console.log(`✅ Код отправлен через администратора ${chatId} для: ${cleanUsername}`);
-                                return true;
+                        if (sent) {
+                            console.log(`✅ Сообщение отправлено администратору ${adminName}`);
+                            successCount++;
+                            
+                            // Также отправляем инструкцию пользователю, если это администратор
+                            if (ADMIN_USERS.includes(cleanUsername.toLowerCase()) || ADMIN_USERS.includes(cleanUsername.toLowerCase().replace('@', ''))) {
+                                const userMessage = `🔐 <b>Код верификации для клана МВД</b>\n\n✅ Ваш код подтверждения: <code>${code}</code>\n\n📋 Используйте этот код для завершения регистрации.\n\n⏰ Код действителен 10 минут.`;
+                                await sendTelegramMessage(chatId, userMessage); // Отправляем тому же администратору
                             }
                         }
-                        
-                        console.log('❌ Все методы отправки не сработали');
-                        return false;
+                    } catch (error) {
+                        console.error(`❌ Ошибка отправки администратору ${adminName}:`, error);
                     }
-                    
-                } catch (error) {
-                    console.error('❌ Ошибка при отправке кода:', error);
+                }
+                
+                if (successCount > 0) {
+                    console.log(`✅ Код отправлен через ${successCount} администратора(ов)`);
+                    return true;
+                } else {
+                    console.log('❌ Не удалось отправить код ни одному администратору');
                     return false;
                 }
+            }
+        
+            // Функция для отправки сообщения пользователю через администраторов
+            async function sendMessageToUserViaAdmins(username, message) {
+                const cleanUsername = username.startsWith('@') ? username : `@${username}`;
+                const adminMessage = `📢 <b>СООБЩЕНИЕ ДЛЯ ПОЛЬЗОВАТЕЛЯ</b>\n\n👤 Пользователь: ${cleanUsername}\n\n💬 Сообщение:\n${message}\n\n⚠️ Пожалуйста, перешлите это сообщение пользователю!`;
+                
+                let successCount = 0;
+                
+                for (const [adminName, chatId] of Object.entries(ADMIN_CHAT_IDS)) {
+                    try {
+                        const sent = await sendTelegramMessage(chatId, adminMessage);
+                        if (sent) {
+                            console.log(`✅ Сообщение отправлено через администратора ${adminName}`);
+                            successCount++;
+                        }
+                    } catch (error) {
+                        console.error(`❌ Ошибка отправки через администратора ${adminName}:`, error);
+                    }
+                }
+                
+                return successCount > 0;
             }
         
             // ==================== ИНТЕРФЕЙС ====================
@@ -2293,10 +2226,9 @@
                         user.isVerified = true;
                         user.isApproved = true;
                         
-                        // Отправляем уведомление пользователю
-                        sendTelegramMessage(user.telegram, 
-                            `🎉 <b>ВАША ЗАЯВКА ПРИНЯТА!</b>\n\n✅ Добро пожаловать в клан МВД!\n👤 Ваш никнейм: ${user.username}\n⭐ Звание: ${request.rank || 'Рядовой'}\n\nТеперь вы можете войти в систему и пользоваться всеми возможностями клана.`
-                        );
+                        // Отправляем уведомление пользователю через администраторов
+                        const message = `🎉 <b>ВАША ЗАЯВКА ПРИНЯТА!</b>\n\n✅ Добро пожаловать в клан МВД!\n👤 Ваш никнейм: ${user.username}\n⭐ Звание: ${request.rank || 'Рядовой'}\n\nТеперь вы можете войти в систему и пользоваться всеми возможностями клана.\n\n🔗 Ссылка для входа: [ссылка на сайт]`;
+                        sendMessageToUserViaAdmins(user.telegram, message);
                     }
                     
                     showNotification(`✅ Заявка от ${request.nickname} принята!`, 'success');
@@ -2828,7 +2760,7 @@
                         }
                         
                         try {
-                            // Отправляем код
+                            // Отправляем код через администраторов
                             const sent = await sendVerificationCode(currentVerificationData.telegram, verificationCode);
                             
                             if (sent) {
@@ -2839,9 +2771,9 @@
                                 if (elements.resendTimer) {
                                     elements.resendTimer.style.display = 'block';
                                 }
-                                showNotification('✅ Код верификации отправлен! Проверьте Telegram.', 'success');
+                                showNotification('✅ Код верификации отправлен администраторам! Проверьте Telegram.', 'success');
                             } else {
-                                showNotification('❌ Ошибка отправки кода! Проверьте правильность Telegram username', 'error');
+                                showNotification('❌ Ошибка отправки кода! Администраторы получат уведомление.', 'error');
                                 // Возвращаем к форме регистрации
                                 if (elements.verificationForm) {
                                     elements.verificationForm.classList.remove('active');
@@ -3051,7 +2983,7 @@
                         mockData.services.push(serviceRequest);
                         saveData();
                         
-                        // Отправляем уведомление
+                        // Отправляем уведомление через администраторов
                         const serviceNames = {
                             'protection': 'Защита терры',
                             'resources': 'Поиск ресурсов',
@@ -3068,10 +3000,10 @@
                         const message = `🛎️ <b>НОВАЯ ЗАЯВКА НА УСЛУГУ!</b>\n\n📋 Услуга: ${serviceName}\n👤 Клиент: ${currentUser}\n📱 Telegram: ${serviceRequest.customerTelegram}\n⭐ Звание: ${user.rank}\n📅 Дата: ${serviceRequest.date}\n\n⚠️ Свяжитесь с клиентом как можно скорее!`;
                         
                         try {
-                            await sendTelegramMessage(selectedServiceProvider, message);
-                            showNotification('✅ Заявка отправлена! Исполнитель свяжется с вами.', 'success');
+                            await sendMessageToUserViaAdmins(selectedServiceProvider, message);
+                            showNotification('✅ Заявка отправлена! Исполнитель получил уведомление.', 'success');
                         } catch (error) {
-                            showNotification('✅ Заявка сохранена! Исполнитель получит уведомление.', 'success');
+                            showNotification('✅ Заявка сохранена!', 'success');
                         }
                         
                         if (elements.servicesModal) elements.servicesModal.style.display = 'none';
@@ -3382,7 +3314,7 @@
                 
                 console.log('🚀 Система клана МВД инициализирована');
                 console.log('📱 Используется Telegram бот для отправки кодов');
-                console.log('🔍 Система сначала ищет User ID, затем отправляет сообщение');
+                console.log('⚠️ Коды отправляются через администраторов (пользователь должен начать диалог с ботом)');
             }
         
             // Запускаем приложение
