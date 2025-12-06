@@ -1745,7 +1745,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Telegram bot configuration
             const TELEGRAM_BOT_TOKEN = '8249371074:AAHrRtSF-smyiQrQz4zTxrHW38UtRwVLsNU';
-            const BOT_USERNAME = '@mvduslugi_bot';
             
             // Глобальные переменные
             let currentVerificationData = null;
@@ -1807,7 +1806,6 @@
                 warehouseModal: document.getElementById('warehouseModal'),
                 closeWarehouseModal: document.getElementById('closeWarehouseModal'),
                 warehouseListTable: document.getElementById('warehouseListTable'),
-                backToMain: document.createElement('button'), // Создаем кнопку "Назад"
                 verificationUsername: document.getElementById('verificationUsername'),
                 verifyCodeBtn: document.getElementById('verifyCodeBtn'),
                 resendTimer: document.getElementById('resendTimer'),
@@ -1829,13 +1827,7 @@
                 pendingRequests: document.getElementById('pendingRequests')
             };
         
-            // ID администраторов
-            const ADMIN_CHAT_IDS = {
-                'mvd_general_RF': '6064583804',
-                'mes_generall': '1988845162'
-            };
-            
-            // Список администраторов
+            // Список администраторов (по username)
             const ADMIN_USERS = [
                 'mes_generall', '@mes_generall',
                 'mvd_general_rf', '@mvd_general_rf', 
@@ -1847,91 +1839,11 @@
         
             function getDefaultData() {
                 return {
-                    members: [
-                        {
-                            id: 1,
-                            nickname: 'mvd',
-                            telegram: '@mvd_general_RF',
-                            rank: 'Генерал',
-                            status: 'Активен'
-                        },
-                        {
-                            id: 2,
-                            nickname: 'mes',
-                            telegram: '@mes_generall',
-                            rank: 'Генерал',
-                            status: 'Активен'
-                        },
-                        {
-                            id: 3,
-                            nickname: 'kazuha',
-                            telegram: '@kazuha',
-                            rank: 'Майор',
-                            status: 'Активен'
-                        }
-                    ],
-                    events: [
-                        {
-                            id: 1,
-                            name: 'Рейд на базу врага',
-                            date: '2024-01-15 20:00',
-                            participants: '8/15',
-                            status: 'Запланирован'
-                        },
-                        {
-                            id: 2,
-                            name: 'Фарм ресурсов',
-                            date: '2024-01-16 18:00',
-                            participants: '12/20',
-                            status: 'Запланирован'
-                        }
-                    ],
-                    warehouse: [
-                        {
-                            id: 1,
-                            name: 'Алмазы',
-                            quantity: '64',
-                            category: 'Ресурсы',
-                            updated: '2024-01-10'
-                        },
-                        {
-                            id: 2,
-                            name: 'Железо',
-                            quantity: '128',
-                            category: 'Ресурсы',
-                            updated: '2024-01-10'
-                        }
-                    ],
+                    members: [],
+                    events: [],
+                    warehouse: [],
                     requests: [],
-                    users: [
-                        {
-                            id: 1,
-                            username: 'mvd',
-                            telegram: '@mvd_general_RF',
-                            rank: 'Генерал',
-                            password: 'admin123',
-                            isVerified: true,
-                            isAdmin: true
-                        },
-                        {
-                            id: 2,
-                            username: 'mes',
-                            telegram: '@mes_generall',
-                            rank: 'Генерал',
-                            password: 'admin123',
-                            isVerified: true,
-                            isAdmin: true
-                        },
-                        {
-                            id: 3,
-                            username: 'kazuha',
-                            telegram: '@kazuha',
-                            rank: 'Майор',
-                            password: 'admin123',
-                            isVerified: true,
-                            isAdmin: true
-                        }
-                    ],
+                    users: [],
                     services: []
                 };
             }
@@ -1940,8 +1852,7 @@
                 try {
                     const savedData = localStorage.getItem('clanMVDData');
                     if (savedData && savedData !== 'null' && savedData !== 'undefined') {
-                        const data = JSON.parse(savedData);
-                        return data;
+                        return JSON.parse(savedData);
                     }
                     return getDefaultData();
                 } catch (error) {
@@ -1974,37 +1885,136 @@
                 saveData();
             }
         
+            // ==================== ПОИСК USER ID ПО TELEGRAM USERNAME ====================
+        
+            async function getTelegramUserId(username) {
+                console.log(`🔍 Поиск User ID для: ${username}`);
+                
+                try {
+                    // Сначала пытаемся получить chat_id через getUpdates
+                    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates`;
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    
+                    if (data.ok && data.result.length > 0) {
+                        const cleanUsername = username.startsWith('@') ? username.substring(1) : username;
+                        
+                        // Ищем пользователя в обновлениях
+                        for (const update of data.result) {
+                            if (update.message) {
+                                const from = update.message.from;
+                                const chat = update.message.chat;
+                                
+                                // Проверяем username или first_name
+                                if ((from.username && from.username.toLowerCase() === cleanUsername.toLowerCase()) ||
+                                    (from.first_name && from.first_name.toLowerCase() === cleanUsername.toLowerCase())) {
+                                    console.log(`✅ Найден User ID: ${from.id} для ${username}`);
+                                    return from.id;
+                                }
+                                
+                                // Также проверяем chat
+                                if (chat.username && chat.username.toLowerCase() === cleanUsername.toLowerCase()) {
+                                    console.log(`✅ Найден Chat ID: ${chat.id} для ${username}`);
+                                    return chat.id;
+                                }
+                            }
+                        }
+                    }
+                    
+                    console.log('❌ User ID не найден в getUpdates, пробуем отправку напрямую...');
+                    return username; // Возвращаем username как fallback
+                } catch (error) {
+                    console.error('❌ Ошибка при поиске User ID:', error);
+                    return username; // Возвращаем username как fallback
+                }
+            }
+        
             // ==================== ОТПРАВКА СООБЩЕНИЙ В TELEGRAM ====================
         
-            function sendTelegramMessage(chatId, message) {
-                return new Promise((resolve, reject) => {
+            async function sendTelegramMessage(chatIdOrUsername, message) {
+                console.log(`📤 Отправка сообщения на: ${chatIdOrUsername}`);
+                
+                try {
+                    // Проверяем, является ли chatIdOrUsername числом (User ID)
+                    let chatId = chatIdOrUsername;
+                    if (isNaN(chatIdOrUsername) || chatIdOrUsername.toString().startsWith('@')) {
+                        // Это username, пробуем найти User ID
+                        chatId = await getTelegramUserId(chatIdOrUsername);
+                    }
+                    
                     const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
                     
-                    // Создаем форму для отправки
-                    const formData = new FormData();
-                    formData.append('chat_id', chatId);
-                    formData.append('text', message);
-                    formData.append('parse_mode', 'HTML');
-                    
-                    // Используем fetch вместо XMLHttpRequest для большей надежности
-                    fetch(url, {
+                    const response = await fetch(url, {
                         method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.ok) {
-                            resolve(true);
-                        } else {
-                            console.error('Ошибка отправки:', data);
-                            resolve(false);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Ошибка сети:', error);
-                        resolve(false);
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            chat_id: chatId,
+                            text: message,
+                            parse_mode: 'HTML'
+                        })
                     });
-                });
+                    
+                    const data = await response.json();
+                    
+                    if (data.ok) {
+                        console.log(`✅ Сообщение отправлено успешно на ${chatId}`);
+                        return true;
+                    } else {
+                        console.error('❌ Ошибка отправки Telegram:', data);
+                        
+                        // Пробуем отправить через администраторов как fallback
+                        if (data.error_code === 400 || data.description.includes('chat not found')) {
+                            console.log('🔄 Пробуем отправить через администраторов...');
+                            return await sendViaAdmins(chatIdOrUsername, message);
+                        }
+                        
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('❌ Ошибка сети при отправке:', error);
+                    return false;
+                }
+            }
+        
+            async function sendViaAdmins(username, message) {
+                console.log(`🔄 Отправка через администраторов для: ${username}`);
+                
+                const adminMessage = `📢 <b>СООБЩЕНИЕ ДЛЯ ПОЛЬЗОВАТЕЛЯ</b>\n\n👤 Пользователь: ${username}\n\n💬 Сообщение:\n${message}\n\n⚠️ Пожалуйста, перешлите это сообщение пользователю!`;
+                
+                // Список администраторов для отправки
+                const adminChatIds = [
+                    '6064583804', // mvd_general_RF
+                    '1988845162'  // mes_generall
+                ];
+                
+                for (const chatId of adminChatIds) {
+                    try {
+                        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                chat_id: chatId,
+                                text: adminMessage,
+                                parse_mode: 'HTML'
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        if (data.ok) {
+                            console.log(`✅ Сообщение отправлено администратору ${chatId}`);
+                            return true;
+                        }
+                    } catch (error) {
+                        console.error(`❌ Ошибка отправки администратору ${chatId}:`, error);
+                    }
+                }
+                
+                return false;
             }
         
             // Функция для отправки кода верификации
@@ -2012,41 +2022,36 @@
                 console.log(`📤 Отправка кода ${code} пользователю ${telegramUsername}`);
                 
                 const cleanUsername = telegramUsername.startsWith('@') ? telegramUsername : `@${telegramUsername}`;
-                const message = `🔐 <b>Код верификации для клана МВД</b>\n\nВаш код: <code>${code}</code>\n\nИспользуйте этот код для завершения регистрации.\n\n⏰ Код действителен 10 минут.`;
+                const message = `🔐 <b>Код верификации для клана МВД</b>\n\n✅ Ваш код подтверждения: <code>${code}</code>\n\n📋 Используйте этот код для завершения регистрации в системе клана МВД.\n\n⏰ Код действителен 10 минут.\n\n⚠️ Никому не сообщайте этот код!`;
                 
                 // Пытаемся отправить напрямую пользователю
                 try {
-                    const directSent = await sendTelegramMessage(cleanUsername, message);
+                    const sent = await sendTelegramMessage(cleanUsername, message);
                     
-                    if (directSent) {
-                        console.log(`✅ Код отправлен напрямую пользователю: ${cleanUsername}`);
+                    if (sent) {
+                        console.log(`✅ Код отправлен пользователю: ${cleanUsername}`);
                         return true;
-                    }
-                    
-                    // Если не получилось напрямую, пробуем через администраторов
-                    console.log('🔄 Прямая отправка не удалась, пробуем через администраторов...');
-                    
-                    let adminSuccess = false;
-                    const adminMessage = `🔐 <b>ВЕРИФИКАЦИЯ ДЛЯ КЛАНА МВД</b>\n\n👤 Пользователь: ${cleanUsername}\n🔢 Код: <code>${code}</code>\n\n⚠️ Перешлите этот код пользователю!`;
-                    
-                    for (const chatId of Object.values(ADMIN_CHAT_IDS)) {
-                        const sent = await sendTelegramMessage(chatId, adminMessage);
-                        if (sent) {
-                            adminSuccess = true;
-                            break;
+                    } else {
+                        console.log('❌ Не удалось отправить напрямую, пробуем через администраторов...');
+                        
+                        // Пробуем через администраторов как fallback
+                        const adminMessage = `🔐 <b>ВЕРИФИКАЦИЯ ДЛЯ КЛАНА МВД</b>\n\n👤 Пользователь: ${cleanUsername}\n🔢 Код верификации: <code>${code}</code>\n\n⚠️ Пожалуйста, перешлите этот код пользователю для завершения регистрации!`;
+                        
+                        const adminChatIds = ['6064583804', '1988845162'];
+                        for (const chatId of adminChatIds) {
+                            const adminSent = await sendTelegramMessage(chatId, adminMessage);
+                            if (adminSent) {
+                                console.log(`✅ Код отправлен через администратора ${chatId} для: ${cleanUsername}`);
+                                return true;
+                            }
                         }
+                        
+                        console.log('❌ Все методы отправки не сработали');
+                        return false;
                     }
-                    
-                    if (adminSuccess) {
-                        console.log(`✅ Код отправлен через администраторов для: ${cleanUsername}`);
-                        return true;
-                    }
-                    
-                    console.log('❌ Все методы отправки не сработали');
-                    return false;
                     
                 } catch (error) {
-                    console.error('❌ Ошибка при отправке:', error);
+                    console.error('❌ Ошибка при отправке кода:', error);
                     return false;
                 }
             }
@@ -2109,19 +2114,6 @@
                 populateTable('requestsTable', mockData.requests, 'request');
                 updateStats();
                 setupAddButtons();
-                
-                // Добавляем кнопку "Назад" если ее еще нет
-                if (!document.getElementById('backToMain')) {
-                    elements.backToMain.id = 'backToMain';
-                    elements.backToMain.className = 'btn btn-primary';
-                    elements.backToMain.innerHTML = '<i class="fas fa-arrow-left"></i> Назад в меню';
-                    elements.backToMain.style.marginTop = '20px';
-                    
-                    const adminHeader = elements.adminPanel.querySelector('.status-header');
-                    if (adminHeader) {
-                        adminHeader.parentNode.appendChild(elements.backToMain);
-                    }
-                }
             }
         
             function populateTable(tableId, data, type) {
@@ -2190,13 +2182,13 @@
                     if (type === 'request') {
                         const acceptBtn = document.createElement('button');
                         acceptBtn.className = 'action-btn edit-btn';
-                        acceptBtn.innerHTML = '<i class="fas fa-check"></i> Принять';
+                        acceptBtn.innerHTML = '<i class="fas fa-check"></i>';
                         acceptBtn.title = 'Принять заявку';
                         acceptBtn.onclick = () => handleRequestAction(item.id, 'accept');
                         
                         const rejectBtn = document.createElement('button');
                         rejectBtn.className = 'action-btn delete-btn';
-                        rejectBtn.innerHTML = '<i class="fas fa-times"></i> Отклонить';
+                        rejectBtn.innerHTML = '<i class="fas fa-times"></i>';
                         rejectBtn.title = 'Отклонить заявку';
                         rejectBtn.onclick = () => handleRequestAction(item.id, 'reject');
                         
@@ -2299,6 +2291,12 @@
                     const user = mockData.users.find(u => u.username === request.nickname);
                     if (user) {
                         user.isVerified = true;
+                        user.isApproved = true;
+                        
+                        // Отправляем уведомление пользователю
+                        sendTelegramMessage(user.telegram, 
+                            `🎉 <b>ВАША ЗАЯВКА ПРИНЯТА!</b>\n\n✅ Добро пожаловать в клан МВД!\n👤 Ваш никнейм: ${user.username}\n⭐ Звание: ${request.rank || 'Рядовой'}\n\nТеперь вы можете войти в систему и пользоваться всеми возможностями клана.`
+                        );
                     }
                     
                     showNotification(`✅ Заявка от ${request.nickname} принята!`, 'success');
@@ -2700,6 +2698,14 @@
                     right: 20px;
                     z-index: 9999;
                     animation: slideIn 0.3s ease;
+                    background: ${type === 'success' ? '#2e7d32' : type === 'error' ? '#c62828' : '#1a237e'};
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
                 `;
                 
                 document.body.appendChild(notification);
@@ -2754,9 +2760,9 @@
                 if (elements.registerForm) {
                     elements.registerForm.addEventListener('submit', async function(e) {
                         e.preventDefault();
-                        const username = this.querySelector('#registerName')?.value;
-                        const telegram = this.querySelector('#registerTelegram')?.value;
-                        const rank = this.querySelector('#registerRank')?.value;
+                        const username = this.querySelector('#registerName')?.value?.trim();
+                        const telegram = this.querySelector('#registerTelegram')?.value?.trim();
+                        const rank = this.querySelector('#registerRank')?.value?.trim();
                         const password = this.querySelector('#registerPassword')?.value;
                         const confirmPassword = this.querySelector('#registerConfirmPassword')?.value;
                         
@@ -2798,9 +2804,11 @@
                         // Показываем форму верификации
                         if (elements.verificationForm) {
                             elements.verificationForm.classList.add('active');
+                            elements.verificationForm.style.display = 'block';
                         }
                         if (elements.registerForm) {
                             elements.registerForm.classList.remove('active');
+                            elements.registerForm.style.display = 'none';
                         }
                         
                         if (elements.verificationUsername) {
@@ -2819,31 +2827,37 @@
                             elements.registerSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка кода...';
                         }
                         
-                        // Отправляем код
-                        const sent = await sendVerificationCode(currentVerificationData.telegram, verificationCode);
-                        
-                        if (elements.registerSubmitBtn) {
-                            elements.registerSubmitBtn.disabled = false;
-                            elements.registerSubmitBtn.innerHTML = 'ПОДАТЬ ЗАЯВКУ В КЛАН';
-                        }
-                        
-                        if (sent) {
-                            startVerificationTimer();
-                            if (elements.resendCode) {
-                                elements.resendCode.style.display = 'none';
+                        try {
+                            // Отправляем код
+                            const sent = await sendVerificationCode(currentVerificationData.telegram, verificationCode);
+                            
+                            if (sent) {
+                                startVerificationTimer();
+                                if (elements.resendCode) {
+                                    elements.resendCode.style.display = 'none';
+                                }
+                                if (elements.resendTimer) {
+                                    elements.resendTimer.style.display = 'block';
+                                }
+                                showNotification('✅ Код верификации отправлен! Проверьте Telegram.', 'success');
+                            } else {
+                                showNotification('❌ Ошибка отправки кода! Проверьте правильность Telegram username', 'error');
+                                // Возвращаем к форме регистрации
+                                if (elements.verificationForm) {
+                                    elements.verificationForm.classList.remove('active');
+                                    elements.verificationForm.style.display = 'none';
+                                }
+                                if (elements.registerForm) {
+                                    elements.registerForm.classList.add('active');
+                                    elements.registerForm.style.display = 'block';
+                                }
                             }
-                            if (elements.resendTimer) {
-                                elements.resendTimer.style.display = 'block';
-                            }
-                            showNotification('✅ Код верификации отправлен!', 'success');
-                        } else {
-                            showNotification('❌ Ошибка отправки кода! Проверьте правильность Telegram username', 'error');
-                            // Возвращаем к форме регистрации
-                            if (elements.verificationForm) {
-                                elements.verificationForm.classList.remove('active');
-                            }
-                            if (elements.registerForm) {
-                                elements.registerForm.classList.add('active');
+                        } catch (error) {
+                            showNotification('❌ Ошибка сети при отправке кода!', 'error');
+                        } finally {
+                            if (elements.registerSubmitBtn) {
+                                elements.registerSubmitBtn.disabled = false;
+                                elements.registerSubmitBtn.innerHTML = 'ПОДАТЬ ЗАЯВКУ В КЛАН';
                             }
                         }
                     });
@@ -2873,13 +2887,18 @@
                             elements.resendCode.style.display = 'none';
                             elements.resendTimer.style.display = 'block';
                             
-                            const sent = await sendVerificationCode(currentVerificationData.telegram, code);
-                            
-                            if (sent) {
-                                startVerificationTimer();
-                                showNotification('✅ Код отправлен повторно!', 'success');
-                            } else {
-                                showNotification('❌ Ошибка отправки кода!', 'error');
+                            try {
+                                const sent = await sendVerificationCode(currentVerificationData.telegram, code);
+                                
+                                if (sent) {
+                                    startVerificationTimer();
+                                    showNotification('✅ Код отправлен повторно! Проверьте Telegram.', 'success');
+                                } else {
+                                    showNotification('❌ Ошибка отправки кода!', 'error');
+                                    elements.resendCode.style.display = 'inline';
+                                }
+                            } catch (error) {
+                                showNotification('❌ Ошибка сети при отправке кода!', 'error');
                                 elements.resendCode.style.display = 'inline';
                             }
                         }
@@ -2890,7 +2909,8 @@
                 if (elements.codeInputs) {
                     elements.codeInputs.forEach((input, index) => {
                         input.addEventListener('input', (e) => {
-                            const value = e.target.value;
+                            const value = e.target.value.replace(/\D/g, '');
+                            e.target.value = value;
                             if (value.length === 1 && index < elements.codeInputs.length - 1) {
                                 elements.codeInputs[index + 1].focus();
                             }
@@ -2920,9 +2940,22 @@
                     elements.adminBtn.addEventListener('click', showAdminPanel);
                 }
         
-                // Кнопка назад из админки (создаем динамически)
-                if (elements.backToMain) {
-                    elements.backToMain.addEventListener('click', hideAdminPanel);
+                // Создаем кнопку "Назад" для админки
+                const backButton = document.createElement('button');
+                backButton.id = 'backToMain';
+                backButton.className = 'btn btn-primary';
+                backButton.innerHTML = '<i class="fas fa-arrow-left"></i> Назад в меню';
+                backButton.style.marginTop = '20px';
+                backButton.style.display = 'block';
+                
+                backButton.addEventListener('click', hideAdminPanel);
+                
+                // Добавляем кнопку в админ панель
+                if (elements.adminPanel) {
+                    const adminContent = elements.adminPanel.querySelector('.status-panel');
+                    if (adminContent) {
+                        adminContent.appendChild(backButton);
+                    }
                 }
         
                 // Модальные окна
@@ -2945,7 +2978,9 @@
         
                 // Переключение темы
                 if (elements.themeToggle) {
-                    elements.themeToggle.addEventListener('click', toggleTheme);
+                    elements.themeToggle.addEventListener('change', function(e) {
+                        toggleTheme(e.target.checked);
+                    });
                 }
         
                 console.log('✅ Обработчики событий настроены');
@@ -2979,7 +3014,7 @@
         
                 // Отправка заявки на услугу
                 if (elements.sendServiceRequest) {
-                    elements.sendServiceRequest.addEventListener('click', function() {
+                    elements.sendServiceRequest.addEventListener('click', async function() {
                         if (!selectedService) {
                             showNotification('❌ Выберите услугу!', 'error');
                             return;
@@ -2991,6 +3026,17 @@
                             return;
                         }
                         
+                        if (!currentUser) {
+                            showNotification('❌ Войдите в систему!', 'error');
+                            return;
+                        }
+                        
+                        const user = mockData.users.find(u => u.username === currentUser);
+                        if (!user) {
+                            showNotification('❌ Пользователь не найден!', 'error');
+                            return;
+                        }
+                        
                         const serviceRequest = {
                             id: mockData.services.length + 1,
                             service: selectedService,
@@ -2998,13 +3044,36 @@
                             customer: currentUser,
                             customerTelegram: username.startsWith('@') ? username : `@${username}`,
                             status: 'Новая',
-                            date: new Date().toLocaleString('ru-RU')
+                            date: new Date().toLocaleString('ru-RU'),
+                            userRank: user.rank
                         };
                         
                         mockData.services.push(serviceRequest);
                         saveData();
                         
-                        showNotification('✅ Заявка отправлена!', 'success');
+                        // Отправляем уведомление
+                        const serviceNames = {
+                            'protection': 'Защита терры',
+                            'resources': 'Поиск ресурсов',
+                            'project_help': 'Помощь в проекте',
+                            'kolbasa': 'Колбаса',
+                            'bot_creation': 'Создание ботов',
+                            'linux_help': 'Помощь в линуксе',
+                            'building_tips': 'Уроки строительства',
+                            'scene_creation': 'Создание сцен',
+                            'pvp_training': 'Обучение по PvP'
+                        };
+                        
+                        const serviceName = serviceNames[selectedService] || selectedService;
+                        const message = `🛎️ <b>НОВАЯ ЗАЯВКА НА УСЛУГУ!</b>\n\n📋 Услуга: ${serviceName}\n👤 Клиент: ${currentUser}\n📱 Telegram: ${serviceRequest.customerTelegram}\n⭐ Звание: ${user.rank}\n📅 Дата: ${serviceRequest.date}\n\n⚠️ Свяжитесь с клиентом как можно скорее!`;
+                        
+                        try {
+                            await sendTelegramMessage(selectedServiceProvider, message);
+                            showNotification('✅ Заявка отправлена! Исполнитель свяжется с вами.', 'success');
+                        } catch (error) {
+                            showNotification('✅ Заявка сохранена! Исполнитель получит уведомление.', 'success');
+                        }
+                        
                         if (elements.servicesModal) elements.servicesModal.style.display = 'none';
                         
                         // Сброс выбора
@@ -3069,13 +3138,13 @@
                 
                 if (user) {
                     if (user.password === password) {
-                        if (!user.isVerified && !user.isAdmin) {
-                            showNotification('❌ Ваша заявка еще не одобрена!', 'error');
+                        if (!user.isVerified && !user.isApproved && !checkAdmin(username)) {
+                            showNotification('❌ Ваша заявка еще не одобрена администратором!', 'error');
                             return;
                         }
                         
                         currentUser = username;
-                        isAdmin = user.isAdmin || checkAdmin(username);
+                        isAdmin = checkAdmin(username);
                         
                         updateUI();
                         showNotification(`✅ Добро пожаловать, ${username}!`, 'success');
@@ -3121,24 +3190,26 @@
                         telegram: currentVerificationData.telegram,
                         rank: currentVerificationData.rank,
                         password: currentVerificationData.password,
-                        isVerified: false, // По умолчанию не верифицирован
-                        isAdmin: checkAdmin(currentVerificationData.username),
+                        isVerified: true,
+                        isApproved: checkAdmin(currentVerificationData.username), // Админы сразу одобрены
                         registrationDate: new Date().toISOString()
                     };
                     
                     mockData.users.push(newUser);
                     
-                    // Создаем заявку на вступление
-                    const newRequest = {
-                        id: mockData.requests.length + 1,
-                        nickname: newUser.username,
-                        telegram: newUser.telegram,
-                        rank: newUser.rank,
-                        date: new Date().toLocaleDateString('ru-RU'),
-                        status: 'На рассмотрении'
-                    };
-                    
-                    mockData.requests.push(newRequest);
+                    // Если не админ, создаем заявку на вступление
+                    if (!newUser.isApproved) {
+                        const newRequest = {
+                            id: mockData.requests.length + 1,
+                            nickname: newUser.username,
+                            telegram: newUser.telegram,
+                            rank: newUser.rank,
+                            date: new Date().toLocaleDateString('ru-RU'),
+                            status: 'На рассмотрении'
+                        };
+                        
+                        mockData.requests.push(newRequest);
+                    }
                     
                     // Сохраняем данные
                     saveData();
@@ -3156,7 +3227,15 @@
                         clearInterval(verificationTimer);
                     }
                     
-                    showNotification('✅ Регистрация успешно завершена! Ожидайте одобрения.', 'success');
+                    // Если админ - сразу логиним
+                    if (newUser.isApproved) {
+                        currentUser = newUser.username;
+                        isAdmin = true;
+                        updateUI();
+                        showNotification('✅ Регистрация успешна! Вы вошли как администратор.', 'success');
+                    } else {
+                        showNotification('✅ Регистрация завершена! Ожидайте одобрения заявки.', 'success');
+                    }
                     
                 } else {
                     showNotification('❌ Неверный код верификации!', 'error');
@@ -3202,7 +3281,7 @@
                             <td>${member.rank || ''}</td>
                             <td><span class="status-badge ${member.status === 'Активен' ? 'active' : 'inactive'}">${member.status || ''}</span></td>
                             <td>
-                                <button class="action-btn edit-btn" onclick="alert('Функция в разработке')">
+                                <button class="action-btn edit-btn" onclick="alert('Написать ' + '${member.telegram || ''}')">
                                     <i class="fas fa-envelope"></i> Написать
                                 </button>
                             </td>
@@ -3228,7 +3307,7 @@
                             <td>${event.participants || ''}</td>
                             <td><span class="status-badge ${event.status === 'Запланирован' ? 'planned' : event.status === 'В процессе' ? 'in-progress' : 'completed'}">${event.status || ''}</span></td>
                             <td>
-                                <button class="action-btn edit-btn" onclick="alert('Функция в разработке')">
+                                <button class="action-btn edit-btn" onclick="alert('Записаться на: ' + '${event.name || ''}')">
                                     <i class="fas fa-user-plus"></i> Записаться
                                 </button>
                             </td>
@@ -3254,7 +3333,7 @@
                             <td>${item.category || ''}</td>
                             <td>${item.updated || ''}</td>
                             <td>
-                                <button class="action-btn edit-btn" onclick="alert('Функция в разработке')">
+                                <button class="action-btn edit-btn" onclick="alert('Запросить: ' + '${item.name || ''}')">
                                     <i class="fas fa-shopping-cart"></i> Запросить
                                 </button>
                             </td>
@@ -3266,16 +3345,13 @@
                 }
             }
         
-            function toggleTheme() {
-                const isLiquidGlass = document.body.classList.toggle('liquid-glass');
-                localStorage.setItem('liquidGlassTheme', isLiquidGlass);
-                
-                if (elements.themeToggle) {
-                    const checkbox = elements.themeToggle.querySelector('input');
-                    if (checkbox) {
-                        checkbox.checked = isLiquidGlass;
-                    }
+            function toggleTheme(isLiquidGlass) {
+                if (isLiquidGlass) {
+                    document.body.classList.add('liquid-glass');
+                } else {
+                    document.body.classList.remove('liquid-glass');
                 }
+                localStorage.setItem('liquidGlassTheme', isLiquidGlass);
                 
                 showNotification(isLiquidGlass ? '🌙 Liquid Glass режим включен' : '☀️ Обычный режим', 'success');
             }
@@ -3288,23 +3364,13 @@
                 
                 // Проверяем сохраненную тему
                 const savedTheme = localStorage.getItem('liquidGlassTheme') === 'true';
-                if (savedTheme) {
-                    document.body.classList.add('liquid-glass');
-                    if (elements.themeToggle) {
-                        const checkbox = elements.themeToggle.querySelector('input');
-                        if (checkbox) {
-                            checkbox.checked = true;
+                if (elements.themeToggle) {
+                    const checkbox = elements.themeToggle.querySelector('input');
+                    if (checkbox) {
+                        checkbox.checked = savedTheme;
+                        if (savedTheme) {
+                            document.body.classList.add('liquid-glass');
                         }
-                    }
-                }
-                
-                // Проверяем авторизацию
-                const savedUser = localStorage.getItem('currentUser');
-                if (savedUser) {
-                    const user = mockData.users.find(u => u.username === savedUser);
-                    if (user) {
-                        currentUser = savedUser;
-                        isAdmin = user.isAdmin || checkAdmin(savedUser);
                     }
                 }
                 
@@ -3315,6 +3381,8 @@
                 updateUI();
                 
                 console.log('🚀 Система клана МВД инициализирована');
+                console.log('📱 Используется Telegram бот для отправки кодов');
+                console.log('🔍 Система сначала ищет User ID, затем отправляет сообщение');
             }
         
             // Запускаем приложение
