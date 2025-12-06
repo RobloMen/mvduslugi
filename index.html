@@ -1510,8 +1510,11 @@
                         <p>Консультации по разработке проектов</p>
                     </div>
                 </div>
+                <!-- Обновленная услуга "Колбаса" -->
                 <div class="service-option" data-service="kolbasa" data-provider="@mvd_gen">
-                    <div class="service-option-icon"><i class="fas fa-drumstick-bite"></i></div>
+                    <div class="service-option-icon" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                        <img src="z.jpg" alt="Колбаса" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                    </div>
                     <div>
                         <h4>Колбаса</h4>
                         <p>Специальная услуга от @mvd_gen</p>
@@ -3289,7 +3292,20 @@
             }
         
             // ==================== ИНИЦИАЛИЗАЦИЯ ====================
-        
+
+            // Обновленная функция для отображения иконок услуг
+            function updateServiceIcons() {
+                // Находим элемент услуги "Колбаса"
+                const kolbasaOption = document.querySelector('.service-option[data-service="kolbasa"]');
+                if (kolbasaOption) {
+                    const iconElement = kolbasaOption.querySelector('.service-option-icon');
+                    if (iconElement) {
+                        // Заменяем иконку на изображение z.jpg
+                        iconElement.innerHTML = `<img src="z.jpg" alt="Колбаса" style="width: 24px; height: 24px; object-fit: cover; border-radius: 4px;">`;
+                    }
+                }
+            }
+            
             function initialize() {
                 // Загружаем данные
                 initializeData();
@@ -3308,6 +3324,9 @@
                 
                 // Настраиваем обработчики
                 setupEventListeners();
+                
+                // Обновляем иконки услуг
+                updateServiceIcons();
                 
                 // Обновляем интерфейс
                 updateUI();
