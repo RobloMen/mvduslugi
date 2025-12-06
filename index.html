@@ -1757,7 +1757,7 @@
             let mockData = {};
             let currentModalType = null;
             let currentEditId = null;
-    
+        
             // Получаем все элементы
             const elements = {
                 authContainer: document.getElementById('authContainer'),
@@ -1807,7 +1807,7 @@
                 warehouseModal: document.getElementById('warehouseModal'),
                 closeWarehouseModal: document.getElementById('closeWarehouseModal'),
                 warehouseListTable: document.getElementById('warehouseListTable'),
-                backToMain: document.getElementById('backToMain'),
+                backToMain: document.createElement('button'), // Создаем кнопку "Назад"
                 verificationUsername: document.getElementById('verificationUsername'),
                 verifyCodeBtn: document.getElementById('verifyCodeBtn'),
                 resendTimer: document.getElementById('resendTimer'),
@@ -1828,7 +1828,7 @@
                 warehouseItems: document.getElementById('warehouseItems'),
                 pendingRequests: document.getElementById('pendingRequests')
             };
-    
+        
             // ID администраторов
             const ADMIN_CHAT_IDS = {
                 'mvd_general_RF': '6064583804',
@@ -1842,9 +1842,9 @@
                 'kazuha', '@kazuha',
                 'mvd', '@mvd'
             ];
-    
+        
             // ==================== СИСТЕМА ДАННЫХ ====================
-    
+        
             function getDefaultData() {
                 return {
                     members: [
@@ -1903,16 +1903,45 @@
                         }
                     ],
                     requests: [],
-                    users: [],
+                    users: [
+                        {
+                            id: 1,
+                            username: 'mvd',
+                            telegram: '@mvd_general_RF',
+                            rank: 'Генерал',
+                            password: 'admin123',
+                            isVerified: true,
+                            isAdmin: true
+                        },
+                        {
+                            id: 2,
+                            username: 'mes',
+                            telegram: '@mes_generall',
+                            rank: 'Генерал',
+                            password: 'admin123',
+                            isVerified: true,
+                            isAdmin: true
+                        },
+                        {
+                            id: 3,
+                            username: 'kazuha',
+                            telegram: '@kazuha',
+                            rank: 'Майор',
+                            password: 'admin123',
+                            isVerified: true,
+                            isAdmin: true
+                        }
+                    ],
                     services: []
                 };
             }
-    
+        
             function loadData() {
                 try {
                     const savedData = localStorage.getItem('clanMVDData');
                     if (savedData && savedData !== 'null' && savedData !== 'undefined') {
-                        return JSON.parse(savedData);
+                        const data = JSON.parse(savedData);
+                        return data;
                     }
                     return getDefaultData();
                 } catch (error) {
@@ -1944,132 +1973,86 @@
                 
                 saveData();
             }
-    
-            // ==================== СИНХРОННЫЕ ЗАПРОСЫ ====================
-    
-            // Синхронная функция отправки сообщения через XMLHttpRequest
-            function sendTelegramMessageSync(chatId, message) {
-                return new Promise((resolve) => {
-                    try {
-                        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-                        const xhr = new XMLHttpRequest();
-                        
-                        xhr.timeout = 10000; // 10 секунд таймаут
-                        xhr.open('POST', url, false); // СИНХРОННЫЙ запрос
-                        xhr.setRequestHeader('Content-Type', 'application/json');
-                        
-                        xhr.onload = function() {
-                            if (xhr.status === 200) {
-                                const result = JSON.parse(xhr.responseText);
-                                resolve(result.ok);
-                            } else {
-                                console.error('❌ Ошибка HTTP:', xhr.status);
-                                resolve(false);
-                            }
-                        };
-                        
-                        xhr.onerror = function() {
-                            console.error('❌ Ошибка сети');
+        
+            // ==================== ОТПРАВКА СООБЩЕНИЙ В TELEGRAM ====================
+        
+            function sendTelegramMessage(chatId, message) {
+                return new Promise((resolve, reject) => {
+                    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+                    
+                    // Создаем форму для отправки
+                    const formData = new FormData();
+                    formData.append('chat_id', chatId);
+                    formData.append('text', message);
+                    formData.append('parse_mode', 'HTML');
+                    
+                    // Используем fetch вместо XMLHttpRequest для большей надежности
+                    fetch(url, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.ok) {
+                            resolve(true);
+                        } else {
+                            console.error('Ошибка отправки:', data);
                             resolve(false);
-                        };
-                        
-                        xhr.ontimeout = function() {
-                            console.error('❌ Таймаут запроса');
-                            resolve(false);
-                        };
-                        
-                        xhr.send(JSON.stringify({
-                            chat_id: chatId,
-                            text: message,
-                            parse_mode: 'HTML'
-                        }));
-                        
-                    } catch (error) {
-                        console.error('❌ Исключение при отправке:', error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка сети:', error);
                         resolve(false);
-                    }
+                    });
                 });
             }
-    
-            // Синхронная отправка кода верификации
-            function sendVerificationCodeSync(telegramUsername, code) {
-                console.log(`📤 СИНХРОННАЯ отправка кода ${code} пользователю ${telegramUsername}`);
+        
+            // Функция для отправки кода верификации
+            async function sendVerificationCode(telegramUsername, code) {
+                console.log(`📤 Отправка кода ${code} пользователю ${telegramUsername}`);
                 
                 const cleanUsername = telegramUsername.startsWith('@') ? telegramUsername : `@${telegramUsername}`;
                 const message = `🔐 <b>Код верификации для клана МВД</b>\n\nВаш код: <code>${code}</code>\n\nИспользуйте этот код для завершения регистрации.\n\n⏰ Код действителен 10 минут.`;
                 
                 // Пытаемся отправить напрямую пользователю
-                console.log('🔄 Попытка прямой синхронной отправки...');
-                const directSent = sendTelegramMessageSync(cleanUsername, message);
-                
-                if (directSent) {
-                    console.log(`✅ Код отправлен напрямую пользователю: ${cleanUsername}`);
-                    return true;
-                }
-                
-                // Если не получилось напрямую, пробуем через администраторов
-                console.log('🔄 Прямая отправка не удалась, пробуем через администраторов...');
-                let adminSuccess = false;
-                
-                Object.values(ADMIN_CHAT_IDS).forEach(chatId => {
-                    const adminMessage = `🔐 <b>ВЕРИФИКАЦИЯ ДЛЯ КЛАНА МВД</b>\n\n👤 Пользователь: ${cleanUsername}\n🔢 Код: <code>${code}</code>\n\n⚠️ Перешлите этот код пользователю!`;
-                    const sent = sendTelegramMessageSync(chatId, adminMessage);
-                    if (sent) {
-                        adminSuccess = true;
-                    }
-                });
-                
-                if (adminSuccess) {
-                    console.log(`✅ Код отправлен через администраторов для: ${cleanUsername}`);
-                    return true;
-                }
-                
-                console.log('❌ Все методы отправки не сработали');
-                return false;
-            }
-    
-            // Синхронная отправка уведомления об услуге
-            function sendServiceNotificationSync(serviceRequest) {
                 try {
-                    const serviceNames = {
-                        'protection': 'Защита терры',
-                        'resources': 'Поиск ресурсов',
-                        'project_help': 'Помощь в проекте',
-                        'kolbasa': 'Колбаса',
-                        'bot_creation': 'Создание ботов',
-                        'linux_help': 'Помощь в линуксе',
-                        'building_tips': 'Уроки строительства',
-                        'scene_creation': 'Создание сцен',
-                        'pvp_training': 'Обучение по PvP'
-                    };
+                    const directSent = await sendTelegramMessage(cleanUsername, message);
                     
-                    const serviceName = serviceNames[serviceRequest.service] || serviceRequest.service;
-                    
-                    const messageToProvider = `🛎️ <b>НОВАЯ ЗАЯВКА НА УСЛУГУ!</b>\n\n📋 <b>Услуга:</b> ${serviceName}\n👤 <b>Клиент:</b> ${serviceRequest.customer}\n📱 <b>Telegram:</b> ${serviceRequest.customerTelegram}\n⭐ <b>Звание:</b> ${serviceRequest.userRank}\n📅 <b>Дата:</b> ${serviceRequest.date}\n\n⚠️ <b>Свяжитесь с клиентом как можно скорее!</b>`;
-                    
-                    const messageToCustomer = `✅ <b>ВАША ЗАЯВКА ПРИНЯТА!</b>\n\n📋 <b>Услуга:</b> ${serviceName}\n👨‍💻 <b>Исполнитель:</b> ${serviceRequest.provider}\n📅 <b>Дата заявки:</b> ${serviceRequest.date}\n\n📞 <b>${serviceRequest.provider}</b> свяжется с вами в ближайшее время.\n\n⏳ <i>Если в течение 24 часов вам не ответили, обратитесь к администраторам клана.</i>`;
-                    
-                    console.log('📤 СИНХРОННАЯ отправка уведомлений об услуге');
-                    
-                    // Отправка поставщику
-                    let providerSent = false;
-                    const providerChatId = ADMIN_CHAT_IDS[serviceRequest.provider.replace('@', '')];
-                    if (providerChatId) {
-                        providerSent = sendTelegramMessageSync(providerChatId, messageToProvider);
+                    if (directSent) {
+                        console.log(`✅ Код отправлен напрямую пользователю: ${cleanUsername}`);
+                        return true;
                     }
                     
-                    // Отправка клиенту
-                    const customerSent = sendTelegramMessageSync(serviceRequest.customerTelegram, messageToCustomer);
+                    // Если не получилось напрямую, пробуем через администраторов
+                    console.log('🔄 Прямая отправка не удалась, пробуем через администраторов...');
                     
-                    return providerSent && customerSent;
+                    let adminSuccess = false;
+                    const adminMessage = `🔐 <b>ВЕРИФИКАЦИЯ ДЛЯ КЛАНА МВД</b>\n\n👤 Пользователь: ${cleanUsername}\n🔢 Код: <code>${code}</code>\n\n⚠️ Перешлите этот код пользователю!`;
+                    
+                    for (const chatId of Object.values(ADMIN_CHAT_IDS)) {
+                        const sent = await sendTelegramMessage(chatId, adminMessage);
+                        if (sent) {
+                            adminSuccess = true;
+                            break;
+                        }
+                    }
+                    
+                    if (adminSuccess) {
+                        console.log(`✅ Код отправлен через администраторов для: ${cleanUsername}`);
+                        return true;
+                    }
+                    
+                    console.log('❌ Все методы отправки не сработали');
+                    return false;
+                    
                 } catch (error) {
-                    console.error('❌ Ошибка отправки уведомления об услуге:', error);
+                    console.error('❌ Ошибка при отправке:', error);
                     return false;
                 }
             }
-    
+        
             // ==================== ИНТЕРФЕЙС ====================
-    
+        
             function updateUI() {
                 if (currentUser) {
                     // Пользователь вошел
@@ -2115,9 +2098,9 @@
                 const normalizedUsername = username.toLowerCase().trim();
                 return ADMIN_USERS.some(admin => admin.toLowerCase() === normalizedUsername);
             }
-    
+        
             // ==================== АДМИН ПАНЕЛЬ ====================
-    
+        
             function initializeAdminPanel() {
                 console.log('🔄 Инициализация админ-панели');
                 populateTable('membersTable', mockData.members, 'member');
@@ -2126,8 +2109,21 @@
                 populateTable('requestsTable', mockData.requests, 'request');
                 updateStats();
                 setupAddButtons();
+                
+                // Добавляем кнопку "Назад" если ее еще нет
+                if (!document.getElementById('backToMain')) {
+                    elements.backToMain.id = 'backToMain';
+                    elements.backToMain.className = 'btn btn-primary';
+                    elements.backToMain.innerHTML = '<i class="fas fa-arrow-left"></i> Назад в меню';
+                    elements.backToMain.style.marginTop = '20px';
+                    
+                    const adminHeader = elements.adminPanel.querySelector('.status-header');
+                    if (adminHeader) {
+                        adminHeader.parentNode.appendChild(elements.backToMain);
+                    }
+                }
             }
-    
+        
             function populateTable(tableId, data, type) {
                 console.log(`🔄 Заполнение таблицы: ${tableId}, тип: ${type}`);
                 
@@ -2160,7 +2156,7 @@
                             <td>${item.nickname || ''}</td>
                             <td>${item.telegram || ''}</td>
                             <td>${item.rank || ''}</td>
-                            <td>${item.status || ''}</td>
+                            <td><span class="status-badge ${item.status === 'Активен' ? 'active' : 'inactive'}">${item.status || ''}</span></td>
                         `;
                     } else if (type === 'event') {
                         row.innerHTML = `
@@ -2168,7 +2164,7 @@
                             <td>${item.name || ''}</td>
                             <td>${item.date || ''}</td>
                             <td>${item.participants || ''}</td>
-                            <td>${item.status || ''}</td>
+                            <td><span class="status-badge ${item.status === 'Запланирован' ? 'planned' : item.status === 'В процессе' ? 'in-progress' : 'completed'}">${item.status || ''}</span></td>
                         `;
                     } else if (type === 'warehouse') {
                         row.innerHTML = `
@@ -2194,13 +2190,13 @@
                     if (type === 'request') {
                         const acceptBtn = document.createElement('button');
                         acceptBtn.className = 'action-btn edit-btn';
-                        acceptBtn.innerHTML = '<i class="fas fa-check"></i>';
+                        acceptBtn.innerHTML = '<i class="fas fa-check"></i> Принять';
                         acceptBtn.title = 'Принять заявку';
                         acceptBtn.onclick = () => handleRequestAction(item.id, 'accept');
                         
                         const rejectBtn = document.createElement('button');
                         rejectBtn.className = 'action-btn delete-btn';
-                        rejectBtn.innerHTML = '<i class="fas fa-times"></i>';
+                        rejectBtn.innerHTML = '<i class="fas fa-times"></i> Отклонить';
                         rejectBtn.title = 'Отклонить заявку';
                         rejectBtn.onclick = () => handleRequestAction(item.id, 'reject');
                         
@@ -2229,52 +2225,57 @@
                 
                 console.log(`✅ Таблица ${tableId} заполнена: ${data.length} записей`);
             }
-    
+        
             function deleteItem(type, id) {
                 console.log(`🗑️ Удаление: ${type}, ID: ${id}`);
                 
-                if (!mockData[type] || !Array.isArray(mockData[type])) {
+                if (!confirm('Вы уверены, что хотите удалить этот элемент?')) {
+                    return false;
+                }
+                
+                const dataKey = type === 'member' ? 'members' : 
+                               type === 'event' ? 'events' : 
+                               type === 'warehouse' ? 'warehouse' : 
+                               'requests';
+                
+                if (!mockData[dataKey] || !Array.isArray(mockData[dataKey])) {
                     alert('❌ Ошибка: данные не найдены');
                     return false;
                 }
                 
-                if (confirm('Вы уверены, что хотите удалить этот элемент?')) {
-                    const index = mockData[type].findIndex(item => item.id === id);
-                    if (index !== -1) {
-                        mockData[type].splice(index, 1);
-                        
-                        // ПРАВИЛЬНЫЕ ИМЕНА ТАБЛИЦ
-                        const tableMap = {
-                            'member': 'membersTable',
-                            'event': 'eventsTable', 
-                            'warehouse': 'warehouseTable',
-                            'request': 'requestsTable'
-                        };
-                        
-                        const tableId = tableMap[type];
-                        if (tableId) {
-                            populateTable(tableId, mockData[type], type);
-                        }
-                        
-                        updateStats();
-                        const saved = saveData();
-                        if (saved) {
-                            alert('✅ Элемент успешно удален!');
-                            return true;
-                        }
-                    } else {
-                        alert('❌ Элемент не найден!');
-                    }
-                }
-                return false;
-            }
-    
-            function handleRequestAction(requestId, action) {
-                if (!mockData.requests) {
-                    alert('❌ Ошибка: данные заявок не найдены');
+                const index = mockData[dataKey].findIndex(item => item.id === id);
+                if (index === -1) {
+                    alert('❌ Элемент не найден!');
                     return false;
                 }
                 
+                mockData[dataKey].splice(index, 1);
+                
+                // Обновляем таблицу
+                const tableMap = {
+                    'member': 'membersTable',
+                    'event': 'eventsTable', 
+                    'warehouse': 'warehouseTable',
+                    'request': 'requestsTable'
+                };
+                
+                const tableId = tableMap[type];
+                if (tableId) {
+                    populateTable(tableId, mockData[dataKey], type);
+                }
+                
+                updateStats();
+                
+                if (saveData()) {
+                    showNotification('✅ Элемент успешно удален!', 'success');
+                    return true;
+                } else {
+                    alert('❌ Ошибка сохранения данных');
+                    return false;
+                }
+            }
+        
+            function handleRequestAction(requestId, action) {
                 const request = mockData.requests.find(r => r.id === requestId);
                 if (!request) {
                     alert('❌ Заявка не найдена');
@@ -2282,32 +2283,40 @@
                 }
                 
                 if (action === 'accept') {
-                    if (!mockData.members) mockData.members = [];
-                    const newMemberId = mockData.members.length > 0 ? Math.max(...mockData.members.map(m => m.id)) + 1 : 1;
+                    // Создаем нового участника
+                    const newMemberId = mockData.members.length > 0 ? 
+                        Math.max(...mockData.members.map(m => m.id)) + 1 : 1;
                     
                     mockData.members.push({
                         id: newMemberId,
                         nickname: request.nickname,
                         telegram: request.telegram,
-                        rank: request.rank,
+                        rank: request.rank || 'Рядовой',
                         status: 'Активен'
                     });
                     
+                    // Помечаем пользователя как подтвержденного
                     const user = mockData.users.find(u => u.username === request.nickname);
-                    if (user) user.isApproved = true;
+                    if (user) {
+                        user.isVerified = true;
+                    }
                     
-                    alert(`✅ Заявка от ${request.nickname} принята!`);
+                    showNotification(`✅ Заявка от ${request.nickname} принята!`, 'success');
                 } else {
-                    alert(`❌ Заявка от ${request.nickname} отклонена!`);
+                    showNotification(`❌ Заявка от ${request.nickname} отклонена!`, 'error');
                 }
                 
+                // Удаляем заявку
                 mockData.requests = mockData.requests.filter(r => r.id !== requestId);
+                
+                // Обновляем таблицы
                 populateTable('requestsTable', mockData.requests, 'request');
                 populateTable('membersTable', mockData.members, 'member');
                 updateStats();
+                
                 return saveData();
             }
-    
+        
             function openEditModal(type, item = null) {
                 currentModalType = type;
                 currentEditId = item ? item.id : null;
@@ -2325,7 +2334,7 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Telegram</label>
-                            <input type="text" class="form-input" id="modalTelegram" value="${isEdit ? (item.telegram || '') : ''}" required>
+                            <input type="text" class="form-input" id="modalTelegram" value="${isEdit ? (item.telegram || '') : ''}" placeholder="@username" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Звание</label>
@@ -2348,7 +2357,10 @@
                     `;
                 } else if (type === 'event') {
                     title = isEdit ? 'Редактировать ивент' : 'Создать ивент';
+                    const currentParticipants = isEdit ? (parseInt(item.participants?.split('/')[0]) || 0) : 0;
                     const maxParticipants = isEdit ? (parseInt(item.participants?.split('/')[1]) || 20) : 20;
+                    const formattedDate = isEdit ? formatDateForInput(item.date) : getCurrentDateTime();
+                    
                     formHTML = `
                         <div class="form-group">
                             <label class="form-label">Название ивента</label>
@@ -2356,7 +2368,11 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Дата и время</label>
-                            <input type="datetime-local" class="form-input" id="modalEventDate" value="${isEdit ? formatDateTimeForInput(item.date) : getCurrentDateTime()}" required>
+                            <input type="datetime-local" class="form-input" id="modalEventDate" value="${formattedDate}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Текущее количество участников</label>
+                            <input type="number" class="form-input" id="modalCurrentParticipants" value="${currentParticipants}" min="0" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Максимум участников</label>
@@ -2409,7 +2425,7 @@
                         </form>
                     `;
                     
-                    // Назначаем обработчики после создания HTML
+                    // Назначаем обработчики
                     setTimeout(() => {
                         const submitBtn = document.getElementById('modalSubmitBtn');
                         const cancelBtn = document.getElementById('modalCancelBtn');
@@ -2428,7 +2444,7 @@
                 
                 if (elements.adminModal) elements.adminModal.style.display = 'flex';
             }
-    
+        
             function handleModalSubmit() {
                 if (!currentModalType) {
                     alert('❌ Ошибка: тип не определен');
@@ -2437,6 +2453,9 @@
                 
                 try {
                     let formData = {};
+                    const dataKey = currentModalType === 'member' ? 'members' : 
+                                  currentModalType === 'event' ? 'events' : 
+                                  'warehouse';
                     
                     if (currentModalType === 'member') {
                         const nickname = document.getElementById('modalNickname')?.value?.trim();
@@ -2445,60 +2464,77 @@
                         const status = document.getElementById('modalStatus')?.value;
                         
                         if (!nickname || !telegram) {
-                            alert('❌ Заполните никнейм и Telegram!');
+                            alert('❌ Заполните все поля!');
                             return;
                         }
-                        formData = { nickname, telegram, rank: rank || 'Рядовой', status: status || 'Активен' };
-                    }
-                    else if (currentModalType === 'event') {
+                        
+                        formData = { 
+                            nickname, 
+                            telegram: telegram.startsWith('@') ? telegram : '@' + telegram,
+                            rank: rank || 'Рядовой', 
+                            status: status || 'Активен' 
+                        };
+                        
+                    } else if (currentModalType === 'event') {
                         const name = document.getElementById('modalEventName')?.value?.trim();
                         const date = document.getElementById('modalEventDate')?.value;
-                        const maxParticipants = document.getElementById('modalMaxParticipants')?.value;
+                        const currentParticipants = parseInt(document.getElementById('modalCurrentParticipants')?.value || 0);
+                        const maxParticipants = parseInt(document.getElementById('modalMaxParticipants')?.value || 20);
                         const status = document.getElementById('modalEventStatus')?.value;
                         
-                        if (!name || !date || !maxParticipants) {
-                            alert('❌ Заполните все поля ивента!');
+                        if (!name || !date) {
+                            alert('❌ Заполните все поля!');
                             return;
                         }
-                        formData = {
-                            name,
-                            date: formatEventDate(date),
-                            participants: `0/${maxParticipants}`,
+                        
+                        formData = { 
+                            name, 
+                            date: formatDateForDisplay(date),
+                            participants: `${currentParticipants}/${maxParticipants}`,
                             status: status || 'Запланирован'
                         };
-                    }
-                    else if (currentModalType === 'warehouse') {
+                        
+                    } else if (currentModalType === 'warehouse') {
                         const name = document.getElementById('modalItemName')?.value?.trim();
                         const quantity = document.getElementById('modalQuantity')?.value;
                         const category = document.getElementById('modalCategory')?.value;
                         
                         if (!name || !quantity) {
-                            alert('❌ Заполните название и количество!');
+                            alert('❌ Заполните все поля!');
                             return;
                         }
-                        formData = {
-                            name,
+                        
+                        formData = { 
+                            name, 
                             quantity: parseInt(quantity) || 0,
                             category: category || 'Другое',
                             updated: new Date().toLocaleDateString('ru-RU')
                         };
                     }
                     
-                    if (!mockData[currentModalType]) mockData[currentModalType] = [];
-                    
+                    // Сохраняем данные
                     if (currentEditId) {
-                        const index = mockData[currentModalType].findIndex(item => item.id === currentEditId);
+                        // Редактирование существующей записи
+                        const index = mockData[dataKey].findIndex(item => item.id === currentEditId);
                         if (index !== -1) {
-                            mockData[currentModalType][index] = { id: currentEditId, ...formData };
+                            mockData[dataKey][index] = { 
+                                id: currentEditId,
+                                ...formData 
+                            };
                         }
                     } else {
-                        const newId = mockData[currentModalType].length > 0 
-                            ? Math.max(...mockData[currentModalType].map(item => item.id || 0)) + 1 
+                        // Добавление новой записи
+                        const newId = mockData[dataKey].length > 0 
+                            ? Math.max(...mockData[dataKey].map(item => item.id)) + 1 
                             : 1;
-                        mockData[currentModalType].push({ id: newId, ...formData });
+                        
+                        mockData[dataKey].push({
+                            id: newId,
+                            ...formData
+                        });
                     }
                     
-                    // ПРАВИЛЬНЫЕ ИМЕНА ТАБЛИЦ ДЛЯ ОБНОВЛЕНИЯ
+                    // Обновляем интерфейс
                     const tableMap = {
                         'member': 'membersTable',
                         'event': 'eventsTable',
@@ -2507,79 +2543,97 @@
                     
                     const tableId = tableMap[currentModalType];
                     if (tableId) {
-                        populateTable(tableId, mockData[currentModalType], currentModalType);
+                        populateTable(tableId, mockData[dataKey], currentModalType);
                     }
                     
                     updateStats();
                     
-                    if (elements.adminModal) elements.adminModal.style.display = 'none';
-                    
+                    // Сохраняем данные
                     if (saveData()) {
-                        alert(currentEditId ? '✅ Изменения сохранены!' : '✅ Элемент добавлен!');
+                        showNotification(
+                            currentEditId ? '✅ Изменения сохранены!' : '✅ Элемент добавлен!', 
+                            'success'
+                        );
+                    }
+                    
+                    // Закрываем модальное окно
+                    if (elements.adminModal) {
+                        elements.adminModal.style.display = 'none';
                     }
                     
                 } catch (error) {
                     console.error('❌ Ошибка при сохранении:', error);
-                    alert('❌ Ошибка: ' + error.message);
+                    alert('❌ Ошибка при сохранении!');
                 }
             }
-    
+        
             function setupAddButtons() {
                 if (elements.addMemberBtn) {
-                    elements.addMemberBtn.addEventListener('click', () => {
-                        openEditModal('member');
-                    });
+                    elements.addMemberBtn.onclick = () => openEditModal('member');
                 }
-                
                 if (elements.addEventBtn) {
-                    elements.addEventBtn.addEventListener('click', () => {
-                        openEditModal('event');
-                    });
+                    elements.addEventBtn.onclick = () => openEditModal('event');
                 }
-                
                 if (elements.addItemBtn) {
-                    elements.addItemBtn.addEventListener('click', () => {
-                        openEditModal('warehouse');
-                    });
+                    elements.addItemBtn.onclick = () => openEditModal('warehouse');
                 }
             }
-    
+        
             function updateStats() {
-                try {
-                    if (elements.totalMembers) elements.totalMembers.textContent = mockData.members ? mockData.members.length : 0;
-                    if (elements.activeEvents) elements.activeEvents.textContent = mockData.events ? mockData.events.filter(e => e.status === 'Запланирован' || e.status === 'В процессе').length : 0;
-                    if (elements.warehouseItems) elements.warehouseItems.textContent = mockData.warehouse ? mockData.warehouse.reduce((sum, item) => sum + parseInt(item.quantity || 0), 0) : 0;
-                    if (elements.pendingRequests) elements.pendingRequests.textContent = mockData.requests ? mockData.requests.length : 0;
-                } catch (error) {
-                    console.error('❌ Ошибка обновления статистики:', error);
+                if (elements.totalMembers) {
+                    elements.totalMembers.textContent = mockData.members?.length || 0;
+                }
+                if (elements.activeEvents) {
+                    elements.activeEvents.textContent = mockData.events?.filter(e => 
+                        e.status === 'Запланирован' || e.status === 'В процессе'
+                    ).length || 0;
+                }
+                if (elements.warehouseItems) {
+                    elements.warehouseItems.textContent = mockData.warehouse?.reduce((sum, item) => 
+                        sum + (parseInt(item.quantity) || 0), 0
+                    ) || 0;
+                }
+                if (elements.pendingRequests) {
+                    elements.pendingRequests.textContent = mockData.requests?.length || 0;
                 }
             }
-    
-            // Вспомогательные функции для дат
-            function formatDateTimeForInput(dateTimeStr) {
+        
+            // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
+        
+            function formatDateForInput(dateString) {
                 try {
-                    const date = new Date(dateTimeStr);
+                    const date = new Date(dateString);
                     if (isNaN(date.getTime())) return getCurrentDateTime();
+                    
                     const year = date.getFullYear();
                     const month = String(date.getMonth() + 1).padStart(2, '0');
                     const day = String(date.getDate()).padStart(2, '0');
                     const hours = String(date.getHours()).padStart(2, '0');
                     const minutes = String(date.getMinutes()).padStart(2, '0');
+                    
                     return `${year}-${month}-${day}T${hours}:${minutes}`;
                 } catch (error) {
                     return getCurrentDateTime();
                 }
             }
-            
-            function formatEventDate(dateTimeStr) {
+        
+            function formatDateForDisplay(dateTimeStr) {
                 try {
                     const date = new Date(dateTimeStr);
-                    return isNaN(date.getTime()) ? new Date().toLocaleString('ru-RU') : date.toLocaleString('ru-RU');
+                    if (isNaN(date.getTime())) return new Date().toLocaleString('ru-RU');
+                    
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const year = date.getFullYear();
+                    const hours = String(date.getHours()).padStart(2, '0');
+                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                    
+                    return `${day}.${month}.${year} ${hours}:${minutes}`;
                 } catch (error) {
-                    return new Date().toLocaleString('ru-RU');
+                    return dateTimeStr;
                 }
             }
-            
+        
             function getCurrentDateTime() {
                 const now = new Date();
                 const year = now.getFullYear();
@@ -2587,189 +2641,267 @@
                 const day = String(now.getDate()).padStart(2, '0');
                 const hours = String(now.getHours()).padStart(2, '0');
                 const minutes = String(now.getMinutes()).padStart(2, '0');
+                
                 return `${year}-${month}-${day}T${hours}:${minutes}`;
             }
-    
-            // ==================== ВЕРИФИКАЦИЯ ====================
-    
+        
             function generateVerificationCode() {
                 return Math.floor(100000 + Math.random() * 900000).toString();
             }
-    
-            function startResendTimer() {
-                let timeLeft = 60;
-                if (elements.resendTimer) elements.resendTimer.textContent = timeLeft;
-                if (elements.resendCode) elements.resendCode.style.display = 'none';
+        
+            function startVerificationTimer(duration = 600) {
+                if (verificationTimer) {
+                    clearInterval(verificationTimer);
+                }
+                
+                let timeLeft = duration;
+                updateTimerDisplay(timeLeft);
                 
                 verificationTimer = setInterval(() => {
                     timeLeft--;
-                    if (elements.resendTimer) elements.resendTimer.textContent = timeLeft;
+                    updateTimerDisplay(timeLeft);
+                    
                     if (timeLeft <= 0) {
                         clearInterval(verificationTimer);
-                        if (elements.resendCode) elements.resendCode.style.display = 'inline';
+                        if (elements.resendCode) {
+                            elements.resendCode.style.display = 'block';
+                        }
+                        if (elements.resendTimer) {
+                            elements.resendTimer.style.display = 'none';
+                        }
+                        showNotification('❌ Время верификации истекло!', 'error');
                     }
                 }, 1000);
             }
-    
-            function verifyCode() {
-                const enteredCode = Array.from(elements.codeInputs).map(input => input.value).join('');
-                if (enteredCode.length !== 6) {
-                    alert('❌ Введите полный код!'); return;
-                }
-                if (!currentVerificationData) {
-                    alert('❌ Ошибка верификации'); return;
-                }
-                if (Date.now() - currentVerificationData.timestamp > 10 * 60 * 1000) {
-                    alert('❌ Код истек'); return;
-                }
-                if (enteredCode === currentVerificationData.verificationCode) {
-                    completeRegistration();
-                } else {
-                    alert('❌ Неверный код!');
-                    elements.codeInputs.forEach(input => input.value = '');
-                    if (elements.codeInputs[0]) elements.codeInputs[0].focus();
+        
+            function updateTimerDisplay(seconds) {
+                if (elements.resendTimer) {
+                    const minutes = Math.floor(seconds / 60);
+                    const secs = seconds % 60;
+                    elements.resendTimer.textContent = `${minutes}:${secs.toString().padStart(2, '0')}`;
                 }
             }
-    
-            function completeRegistration() {
-                if (!currentVerificationData) return;
+        
+            function showNotification(message, type = 'info') {
+                // Создаем элемент уведомления
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                notification.innerHTML = `
+                    <div class="notification-content ${type}">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
                 
-                const newUser = {
-                    id: mockData.users.length + 1,
-                    username: currentVerificationData.nickname,
-                    telegram: currentVerificationData.telegram,
-                    rank: currentVerificationData.rank,
-                    password: currentVerificationData.password,
-                    isVerified: true,
-                    registrationDate: new Date().toISOString()
-                };
+                // Стили для уведомления
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    z-index: 9999;
+                    animation: slideIn 0.3s ease;
+                `;
                 
-                mockData.users.push(newUser);
+                document.body.appendChild(notification);
                 
-                const newRequest = {
-                    id: mockData.requests.length + 1,
-                    nickname: currentVerificationData.nickname,
-                    telegram: currentVerificationData.telegram,
-                    rank: currentVerificationData.rank,
-                    date: new Date().toLocaleDateString('ru-RU'),
-                    status: 'На рассмотрении'
-                };
-                
-                mockData.requests.push(newRequest);
-                saveData();
-                
-                if (elements.verificationForm) {
-                    elements.verificationForm.style.display = 'none';
-                    elements.verificationForm.classList.remove('active');
-                }
-                if (elements.successMessage) elements.successMessage.style.display = 'block';
-                
-                currentVerificationData = null;
-                clearInterval(verificationTimer);
-                
+                // Автоматическое скрытие через 5 секунд
                 setTimeout(() => {
-                    currentUser = newUser.username;
-                    isAdmin = checkAdmin(newUser.username);
-                    updateUI();
-                    alert('🎉 Регистрация завершена!');
-                }, 2000);
+                    notification.style.animation = 'slideOut 0.3s ease';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 300);
+                }, 5000);
             }
-    
+        
             // ==================== ОБРАБОТЧИКИ СОБЫТИЙ ====================
-    
+        
             function setupEventListeners() {
-                // Auth tabs
+                console.log('🎯 Настройка обработчиков событий...');
+                
+                // Табы авторизации
                 if (elements.authTabs) {
                     elements.authTabs.forEach(tab => {
                         tab.addEventListener('click', () => {
                             const target = tab.getAttribute('data-tab');
+                            
                             elements.authTabs.forEach(t => t.classList.remove('active'));
-                            elements.authForms.forEach(f => {
-                                f.classList.remove('active');
-                                f.style.display = 'none';
-                            });
+                            elements.authForms.forEach(f => f.classList.remove('active'));
+                            
                             tab.classList.add('active');
-                            const targetForm = document.getElementById(`${target}Form`);
-                            if (targetForm) {
-                                targetForm.style.display = 'block';
-                                targetForm.classList.add('active');
-                            }
-                            if (elements.verificationForm) elements.verificationForm.style.display = 'none';
-                            if (elements.successMessage) elements.successMessage.style.display = 'none';
+                            document.getElementById(`${target}Form`)?.classList.add('active');
                         });
                     });
                 }
-    
-                // Register form - СИНХРОННАЯ обработка
-                if (elements.registerForm) {
-                    elements.registerForm.addEventListener('submit', function(e) {
+        
+                // Форма логина
+                if (elements.loginForm) {
+                    elements.loginForm.addEventListener('submit', function(e) {
                         e.preventDefault();
-                        const nickname = document.getElementById('registerName')?.value?.trim();
-                        const telegram = document.getElementById('registerTelegram')?.value?.trim();
-                        const rank = document.getElementById('registerRank')?.value?.trim();
-                        const password = document.getElementById('registerPassword')?.value;
-                        const confirmPassword = document.getElementById('registerConfirmPassword')?.value;
+                        const username = this.querySelector('#loginUsername')?.value;
+                        const password = this.querySelector('#loginPassword')?.value;
                         
-                        if (!nickname || !telegram || !rank || !password || !confirmPassword) {
-                            alert('❌ Заполните все поля!'); return;
+                        if (username && password) {
+                            handleLogin(username, password);
+                        } else {
+                            showNotification('❌ Заполните все поля!', 'error');
                         }
+                    });
+                }
+        
+                // Форма регистрации
+                if (elements.registerForm) {
+                    elements.registerForm.addEventListener('submit', async function(e) {
+                        e.preventDefault();
+                        const username = this.querySelector('#registerName')?.value;
+                        const telegram = this.querySelector('#registerTelegram')?.value;
+                        const rank = this.querySelector('#registerRank')?.value;
+                        const password = this.querySelector('#registerPassword')?.value;
+                        const confirmPassword = this.querySelector('#registerConfirmPassword')?.value;
+                        
+                        if (!username || !telegram || !rank || !password || !confirmPassword) {
+                            showNotification('❌ Заполните все поля!', 'error');
+                            return;
+                        }
+                        
                         if (password !== confirmPassword) {
-                            alert('❌ Пароли не совпадают!'); return;
+                            showNotification('❌ Пароли не совпадают!', 'error');
+                            return;
                         }
+                        
                         if (password.length < 6) {
-                            alert('❌ Пароль должен содержать минимум 6 символов!'); return;
-                        }
-                        if (mockData.users.find(user => user.username === nickname)) {
-                            alert('❌ Этот никнейм уже занят!'); return;
+                            showNotification('❌ Пароль должен содержать минимум 6 символов!', 'error');
+                            return;
                         }
                         
-                        if (elements.loadingMessage) elements.loadingMessage.style.display = 'block';
-                        if (elements.registerSubmitBtn) elements.registerSubmitBtn.disabled = true;
+                        // Проверяем, нет ли уже такого пользователя
+                        const existingUser = mockData.users.find(u => u.username === username);
+                        if (existingUser) {
+                            showNotification('❌ Пользователь с таким именем уже существует!', 'error');
+                            return;
+                        }
                         
+                        // Генерируем код верификации
                         const verificationCode = generateVerificationCode();
+                        
+                        // Сохраняем данные для верификации
                         currentVerificationData = {
-                            nickname, 
-                            telegram: telegram.startsWith('@') ? telegram : '@' + telegram,
-                            rank, 
-                            password, 
-                            verificationCode, 
+                            username,
+                            telegram: telegram.startsWith('@') ? telegram : `@${telegram}`,
+                            rank,
+                            password,
+                            code: verificationCode,
                             timestamp: Date.now()
                         };
                         
-                        // СИНХРОННАЯ отправка кода
-                        const sent = sendVerificationCodeSync(currentVerificationData.telegram, verificationCode);
+                        // Показываем форму верификации
+                        if (elements.verificationForm) {
+                            elements.verificationForm.classList.add('active');
+                        }
+                        if (elements.registerForm) {
+                            elements.registerForm.classList.remove('active');
+                        }
                         
-                        if (elements.loadingMessage) elements.loadingMessage.style.display = 'none';
-                        if (elements.registerSubmitBtn) elements.registerSubmitBtn.disabled = false;
+                        if (elements.verificationUsername) {
+                            elements.verificationUsername.textContent = currentVerificationData.telegram;
+                        }
+                        
+                        // Сбрасываем поля кода
+                        if (elements.codeInputs) {
+                            elements.codeInputs.forEach(input => input.value = '');
+                            elements.codeInputs[0].focus();
+                        }
+                        
+                        // Показываем загрузку
+                        if (elements.registerSubmitBtn) {
+                            elements.registerSubmitBtn.disabled = true;
+                            elements.registerSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка кода...';
+                        }
+                        
+                        // Отправляем код
+                        const sent = await sendVerificationCode(currentVerificationData.telegram, verificationCode);
+                        
+                        if (elements.registerSubmitBtn) {
+                            elements.registerSubmitBtn.disabled = false;
+                            elements.registerSubmitBtn.innerHTML = 'ПОДАТЬ ЗАЯВКУ В КЛАН';
+                        }
                         
                         if (sent) {
-                            if (elements.registerForm) elements.registerForm.style.display = 'none';
-                            if (elements.verificationForm) {
-                                elements.verificationForm.style.display = 'block';
-                                elements.verificationForm.classList.add('active');
+                            startVerificationTimer();
+                            if (elements.resendCode) {
+                                elements.resendCode.style.display = 'none';
                             }
-                            if (elements.verificationUsername) elements.verificationUsername.textContent = currentVerificationData.telegram;
-                            startResendTimer();
-                            alert('✅ Код отправлен! Проверьте Telegram.');
+                            if (elements.resendTimer) {
+                                elements.resendTimer.style.display = 'block';
+                            }
+                            showNotification('✅ Код верификации отправлен!', 'success');
                         } else {
-                            alert('❌ Ошибка отправки. Начните диалог с ботом ' + BOT_USERNAME);
+                            showNotification('❌ Ошибка отправки кода! Проверьте правильность Telegram username', 'error');
+                            // Возвращаем к форме регистрации
+                            if (elements.verificationForm) {
+                                elements.verificationForm.classList.remove('active');
+                            }
+                            if (elements.registerForm) {
+                                elements.registerForm.classList.add('active');
+                            }
                         }
                     });
                 }
-    
-                // Code verification
+        
+                // Форма верификации
+                if (elements.verificationForm) {
+                    elements.verificationForm.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        handleVerification();
+                    });
+                }
+        
+                // Кнопка подтверждения кода
+                if (elements.verifyCodeBtn) {
+                    elements.verifyCodeBtn.addEventListener('click', handleVerification);
+                }
+        
+                // Повторная отправка кода
+                if (elements.resendCode) {
+                    elements.resendCode.addEventListener('click', async function() {
+                        if (currentVerificationData) {
+                            const code = generateVerificationCode();
+                            currentVerificationData.code = code;
+                            currentVerificationData.timestamp = Date.now();
+                            
+                            elements.resendCode.style.display = 'none';
+                            elements.resendTimer.style.display = 'block';
+                            
+                            const sent = await sendVerificationCode(currentVerificationData.telegram, code);
+                            
+                            if (sent) {
+                                startVerificationTimer();
+                                showNotification('✅ Код отправлен повторно!', 'success');
+                            } else {
+                                showNotification('❌ Ошибка отправки кода!', 'error');
+                                elements.resendCode.style.display = 'inline';
+                            }
+                        }
+                    });
+                }
+        
+                // Ввод кода верификации
                 if (elements.codeInputs) {
                     elements.codeInputs.forEach((input, index) => {
                         input.addEventListener('input', (e) => {
-                            const value = e.target.value.replace(/\D/g, '');
-                            e.target.value = value;
+                            const value = e.target.value;
                             if (value.length === 1 && index < elements.codeInputs.length - 1) {
                                 elements.codeInputs[index + 1].focus();
                             }
-                            if (Array.from(elements.codeInputs).every(input => input.value.length === 1)) {
-                                verifyCode();
+                            
+                            // Автоподтверждение при заполнении всех полей
+                            const allFilled = Array.from(elements.codeInputs).every(input => input.value.length === 1);
+                            if (allFilled) {
+                                handleVerification();
                             }
                         });
+                        
                         input.addEventListener('keydown', (e) => {
                             if (e.key === 'Backspace' && !e.target.value && index > 0) {
                                 elements.codeInputs[index - 1].focus();
@@ -2777,116 +2909,50 @@
                         });
                     });
                 }
-    
-                // Verify code button
-                if (elements.verifyCodeBtn) {
-                    elements.verifyCodeBtn.addEventListener('click', verifyCode);
-                }
-    
-                // Resend code - СИНХРОННАЯ обработка
-                if (elements.resendCode) {
-                    elements.resendCode.addEventListener('click', function() {
-                        if (!currentVerificationData) return;
-                        if (elements.resendCode) elements.resendCode.style.display = 'none';
-                        if (elements.resendTimer) elements.resendTimer.textContent = '60';
-                        
-                        const newCode = generateVerificationCode();
-                        currentVerificationData.verificationCode = newCode;
-                        currentVerificationData.timestamp = Date.now();
-                        
-                        // СИНХРОННАЯ отправка нового кода
-                        const sent = sendVerificationCodeSync(currentVerificationData.telegram, newCode);
-                        
-                        if (sent) {
-                            startResendTimer();
-                            alert('✅ Новый код отправлен!');
-                            elements.codeInputs.forEach(input => input.value = '');
-                            if (elements.codeInputs[0]) elements.codeInputs[0].focus();
-                        } else {
-                            alert('❌ Ошибка отправки кода.');
-                            if (elements.resendCode) elements.resendCode.style.display = 'inline';
-                        }
-                    });
-                }
-    
-                // Login form
-                if (elements.loginForm) {
-                    elements.loginForm.addEventListener('submit', (e) => {
-                        e.preventDefault();
-                        const username = document.getElementById('loginUsername')?.value?.trim();
-                        const password = document.getElementById('loginPassword')?.value;
-                        
-                        if (!username || !password) {
-                            alert('❌ Заполните все поля!'); return;
-                        }
-                        
-                        const user = mockData.users.find(u => u.username === username && u.password === password);
-                        if (user) {
-                            if (user.isVerified) {
-                                currentUser = username;
-                                isAdmin = checkAdmin(username);
-                                updateUI();
-                                alert('✅ Успешный вход!');
-                            } else {
-                                alert('❌ Аккаунт не верифицирован.');
-                            }
-                        } else {
-                            alert('❌ Неверный логин или пароль!');
-                        }
-                    });
-                }
-    
-                // Logout
+        
+                // Кнопка выхода
                 if (elements.logoutBtn) {
-                    elements.logoutBtn.addEventListener('click', () => {
-                        currentUser = null;
-                        isAdmin = false;
-                        updateUI();
-                        alert('Вы вышли из системы');
-                    });
+                    elements.logoutBtn.addEventListener('click', handleLogout);
                 }
-    
-                // Admin button
+        
+                // Кнопка администратора
                 if (elements.adminBtn) {
-                    elements.adminBtn.addEventListener('click', () => {
-                        if (isAdmin) {
-                            if (elements.adminPanel) elements.adminPanel.style.display = 'block';
-                            if (elements.mainContent) elements.mainContent.style.display = 'none';
-                            initializeAdminPanel();
-                        }
-                    });
+                    elements.adminBtn.addEventListener('click', showAdminPanel);
                 }
-    
-                // Admin tabs
+        
+                // Кнопка назад из админки (создаем динамически)
+                if (elements.backToMain) {
+                    elements.backToMain.addEventListener('click', hideAdminPanel);
+                }
+        
+                // Модальные окна
+                setupModalHandlers();
+                
+                // Табы админки
                 if (elements.adminTabs) {
                     elements.adminTabs.forEach(tab => {
                         tab.addEventListener('click', () => {
                             const target = tab.getAttribute('data-tab');
+                            
                             elements.adminTabs.forEach(t => t.classList.remove('active'));
                             elements.adminContents.forEach(c => c.classList.remove('active'));
+                            
                             tab.classList.add('active');
-                            const targetContent = document.getElementById(`${target}Content`);
-                            if (targetContent) targetContent.classList.add('active');
+                            document.getElementById(`${target}Content`)?.classList.add('active');
                         });
                     });
                 }
-    
-                // Close modals
-                if (elements.closeAdminModal) {
-                    elements.closeAdminModal.addEventListener('click', () => {
-                        if (elements.adminModal) elements.adminModal.style.display = 'none';
-                    });
+        
+                // Переключение темы
+                if (elements.themeToggle) {
+                    elements.themeToggle.addEventListener('click', toggleTheme);
                 }
-    
-                // Back to main
-                if (elements.backToMain) {
-                    elements.backToMain.addEventListener('click', () => {
-                        if (elements.adminPanel) elements.adminPanel.style.display = 'none';
-                        if (elements.mainContent) elements.mainContent.style.display = 'grid';
-                    });
-                }
-    
-                // Services
+        
+                console.log('✅ Обработчики событий настроены');
+            }
+        
+            function setupModalHandlers() {
+                // Модальное окно услуг
                 if (elements.servicesBtn) {
                     elements.servicesBtn.addEventListener('click', () => {
                         if (elements.servicesModal) elements.servicesModal.style.display = 'flex';
@@ -2898,36 +2964,31 @@
                         if (elements.servicesModal) elements.servicesModal.style.display = 'none';
                     });
                 }
-    
-                // Service options
+        
+                // Выбор услуги
                 if (elements.serviceOptions) {
                     elements.serviceOptions.forEach(option => {
-                        option.addEventListener('click', () => {
+                        option.addEventListener('click', function() {
                             elements.serviceOptions.forEach(opt => opt.classList.remove('selected'));
-                            option.classList.add('selected');
-                            selectedService = option.getAttribute('data-service');
-                            selectedServiceProvider = option.getAttribute('data-provider');
+                            this.classList.add('selected');
+                            selectedService = this.getAttribute('data-service');
+                            selectedServiceProvider = this.getAttribute('data-provider');
                         });
                     });
                 }
-    
-                // Send service request - СИНХРОННАЯ обработка
+        
+                // Отправка заявки на услугу
                 if (elements.sendServiceRequest) {
                     elements.sendServiceRequest.addEventListener('click', function() {
                         if (!selectedService) {
-                            alert('❌ Выберите услугу'); return;
-                        }
-                        const telegramUsername = elements.serviceUsernameInput?.value?.trim();
-                        if (!telegramUsername) {
-                            alert('❌ Введите Telegram username'); return;
-                        }
-                        if (!currentUser) {
-                            alert('❌ Войдите в систему'); return;
+                            showNotification('❌ Выберите услугу!', 'error');
+                            return;
                         }
                         
-                        const user = mockData.users.find(u => u.username === currentUser);
-                        if (!user) {
-                            alert('❌ Пользователь не найден'); return;
+                        const username = elements.serviceUsernameInput?.value;
+                        if (!username) {
+                            showNotification('❌ Введите Telegram username!', 'error');
+                            return;
                         }
                         
                         const serviceRequest = {
@@ -2935,52 +2996,328 @@
                             service: selectedService,
                             provider: selectedServiceProvider,
                             customer: currentUser,
-                            customerTelegram: telegramUsername.startsWith('@') ? telegramUsername : '@' + telegramUsername,
+                            customerTelegram: username.startsWith('@') ? username : `@${username}`,
                             status: 'Новая',
-                            date: new Date().toLocaleString('ru-RU'),
-                            userRank: user.rank
+                            date: new Date().toLocaleString('ru-RU')
                         };
                         
                         mockData.services.push(serviceRequest);
                         saveData();
                         
-                        if (elements.sendServiceRequest) {
-                            elements.sendServiceRequest.disabled = true;
-                            elements.sendServiceRequest.textContent = 'Отправка...';
-                        }
-                        
-                        // СИНХРОННАЯ отправка уведомления
-                        const sent = sendServiceNotificationSync(serviceRequest);
-                        
-                        if (elements.sendServiceRequest) {
-                            elements.sendServiceRequest.disabled = false;
-                            elements.sendServiceRequest.textContent = 'Отправить заявку';
-                        }
-                        
-                        if (sent) {
-                            alert(`✅ Заявка на услугу отправлена! ${selectedServiceProvider} свяжется с вами.`);
-                        } else {
-                            alert('⚠️ Заявка сохранена, но уведомление не отправлено. Свяжитесь с исполнителем напрямую.');
-                        }
-                        
+                        showNotification('✅ Заявка отправлена!', 'success');
                         if (elements.servicesModal) elements.servicesModal.style.display = 'none';
                         
+                        // Сброс выбора
                         elements.serviceOptions.forEach(opt => opt.classList.remove('selected'));
                         selectedService = null;
                         selectedServiceProvider = null;
                     });
                 }
+        
+                // Закрытие модальных окон
+                document.addEventListener('click', (e) => {
+                    if (elements.servicesModal && e.target === elements.servicesModal) {
+                        elements.servicesModal.style.display = 'none';
+                    }
+                    if (elements.adminModal && e.target === elements.adminModal) {
+                        elements.adminModal.style.display = 'none';
+                    }
+                    if (elements.donationModal && e.target === elements.donationModal) {
+                        elements.donationModal.style.display = 'none';
+                    }
+                    if (elements.clanMembersModal && e.target === elements.clanMembersModal) {
+                        elements.clanMembersModal.style.display = 'none';
+                    }
+                    if (elements.eventsModal && e.target === elements.eventsModal) {
+                        elements.eventsModal.style.display = 'none';
+                    }
+                    if (elements.warehouseModal && e.target === elements.warehouseModal) {
+                        elements.warehouseModal.style.display = 'none';
+                    }
+                });
+        
+                // Модальные окна участников, ивентов и склада
+                [elements.clanMembersBtn, elements.clanMembersBtn2].forEach(btn => {
+                    if (btn) btn.addEventListener('click', showClanMembers);
+                });
+                
+                [elements.eventsBtn, elements.eventsBtn2].forEach(btn => {
+                    if (btn) btn.addEventListener('click', showEvents);
+                });
+                
+                if (elements.warehouseBtn) {
+                    elements.warehouseBtn.addEventListener('click', showWarehouse);
+                }
+                
+                // Закрытие модальных окон
+                [elements.closeClanMembersModal, elements.closeEventsModal, elements.closeWarehouseModal].forEach(closeBtn => {
+                    if (closeBtn) {
+                        closeBtn.addEventListener('click', () => {
+                            const modal = closeBtn.closest('.modal');
+                            if (modal) modal.style.display = 'none';
+                        });
+                    }
+                });
             }
-    
-            // ==================== ИНИЦИАЛИЗАЦИЯ ====================
-    
-            function initialize() {
-                initializeData();
+        
+            // ==================== ОСНОВНЫЕ ФУНКЦИИ ====================
+        
+            function handleLogin(username, password) {
+                console.log(`🔐 Попытка входа: ${username}`);
+                
+                const user = mockData.users.find(u => u.username === username);
+                
+                if (user) {
+                    if (user.password === password) {
+                        if (!user.isVerified && !user.isAdmin) {
+                            showNotification('❌ Ваша заявка еще не одобрена!', 'error');
+                            return;
+                        }
+                        
+                        currentUser = username;
+                        isAdmin = user.isAdmin || checkAdmin(username);
+                        
+                        updateUI();
+                        showNotification(`✅ Добро пожаловать, ${username}!`, 'success');
+                        
+                    } else {
+                        showNotification('❌ Неверный пароль!', 'error');
+                    }
+                } else {
+                    showNotification('❌ Пользователь не найден!', 'error');
+                }
+            }
+        
+            function handleVerification() {
+                if (!currentVerificationData) {
+                    showNotification('❌ Данные верификации не найдены!', 'error');
+                    return;
+                }
+                
+                // Собираем код из полей ввода
+                let enteredCode = '';
+                if (elements.codeInputs) {
+                    elements.codeInputs.forEach(input => {
+                        enteredCode += input.value;
+                    });
+                }
+                
+                if (enteredCode.length !== 6) {
+                    showNotification('❌ Введите полный код из 6 цифр!', 'error');
+                    return;
+                }
+                
+                // Проверяем, не истек ли код
+                if (Date.now() - currentVerificationData.timestamp > 10 * 60 * 1000) {
+                    showNotification('❌ Код истек! Запросите новый.', 'error');
+                    return;
+                }
+                
+                if (enteredCode === currentVerificationData.code) {
+                    // Код верный - завершаем регистрацию
+                    const newUser = {
+                        id: mockData.users.length + 1,
+                        username: currentVerificationData.username,
+                        telegram: currentVerificationData.telegram,
+                        rank: currentVerificationData.rank,
+                        password: currentVerificationData.password,
+                        isVerified: false, // По умолчанию не верифицирован
+                        isAdmin: checkAdmin(currentVerificationData.username),
+                        registrationDate: new Date().toISOString()
+                    };
+                    
+                    mockData.users.push(newUser);
+                    
+                    // Создаем заявку на вступление
+                    const newRequest = {
+                        id: mockData.requests.length + 1,
+                        nickname: newUser.username,
+                        telegram: newUser.telegram,
+                        rank: newUser.rank,
+                        date: new Date().toLocaleDateString('ru-RU'),
+                        status: 'На рассмотрении'
+                    };
+                    
+                    mockData.requests.push(newRequest);
+                    
+                    // Сохраняем данные
+                    saveData();
+                    
+                    // Показываем сообщение об успехе
+                    if (elements.verificationForm) {
+                        elements.verificationForm.style.display = 'none';
+                    }
+                    if (elements.successMessage) {
+                        elements.successMessage.style.display = 'block';
+                    }
+                    
+                    // Очищаем таймер
+                    if (verificationTimer) {
+                        clearInterval(verificationTimer);
+                    }
+                    
+                    showNotification('✅ Регистрация успешно завершена! Ожидайте одобрения.', 'success');
+                    
+                } else {
+                    showNotification('❌ Неверный код верификации!', 'error');
+                    // Очищаем поля
+                    if (elements.codeInputs) {
+                        elements.codeInputs.forEach(input => input.value = '');
+                        elements.codeInputs[0].focus();
+                    }
+                }
+            }
+        
+            function handleLogout() {
+                currentUser = null;
+                isAdmin = false;
                 updateUI();
-                setupEventListeners();
-                console.log('🚀 Система клана МВД инициализирована (СИНХРОННЫЕ ЗАПРОСЫ)');
+                showNotification('✅ Вы успешно вышли из системы!', 'success');
             }
-    
+        
+            function showAdminPanel() {
+                if (elements.mainContent) elements.mainContent.style.display = 'none';
+                if (elements.adminPanel) {
+                    elements.adminPanel.style.display = 'block';
+                    initializeAdminPanel();
+                }
+            }
+        
+            function hideAdminPanel() {
+                if (elements.adminPanel) elements.adminPanel.style.display = 'none';
+                if (elements.mainContent) elements.mainContent.style.display = 'grid';
+            }
+        
+            function showClanMembers() {
+                if (elements.clanMembersModal) {
+                    // Заполняем таблицу участников
+                    const tableBody = elements.clanMembersTable.querySelector('tbody') || elements.clanMembersTable;
+                    tableBody.innerHTML = '';
+                    
+                    mockData.members.forEach(member => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${member.nickname || ''}</td>
+                            <td>${member.telegram || ''}</td>
+                            <td>${member.rank || ''}</td>
+                            <td><span class="status-badge ${member.status === 'Активен' ? 'active' : 'inactive'}">${member.status || ''}</span></td>
+                            <td>
+                                <button class="action-btn edit-btn" onclick="alert('Функция в разработке')">
+                                    <i class="fas fa-envelope"></i> Написать
+                                </button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                    
+                    elements.clanMembersModal.style.display = 'flex';
+                }
+            }
+        
+            function showEvents() {
+                if (elements.eventsModal) {
+                    // Заполняем таблицу ивентов
+                    const tableBody = elements.eventsListTable.querySelector('tbody') || elements.eventsListTable;
+                    tableBody.innerHTML = '';
+                    
+                    mockData.events.forEach(event => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${event.name || ''}</td>
+                            <td>${event.date || ''}</td>
+                            <td>${event.participants || ''}</td>
+                            <td><span class="status-badge ${event.status === 'Запланирован' ? 'planned' : event.status === 'В процессе' ? 'in-progress' : 'completed'}">${event.status || ''}</span></td>
+                            <td>
+                                <button class="action-btn edit-btn" onclick="alert('Функция в разработке')">
+                                    <i class="fas fa-user-plus"></i> Записаться
+                                </button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                    
+                    elements.eventsModal.style.display = 'flex';
+                }
+            }
+        
+            function showWarehouse() {
+                if (elements.warehouseModal) {
+                    // Заполняем таблицу склада
+                    const tableBody = elements.warehouseListTable.querySelector('tbody') || elements.warehouseListTable;
+                    tableBody.innerHTML = '';
+                    
+                    mockData.warehouse.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${item.name || ''}</td>
+                            <td>${item.quantity || ''}</td>
+                            <td>${item.category || ''}</td>
+                            <td>${item.updated || ''}</td>
+                            <td>
+                                <button class="action-btn edit-btn" onclick="alert('Функция в разработке')">
+                                    <i class="fas fa-shopping-cart"></i> Запросить
+                                </button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                    
+                    elements.warehouseModal.style.display = 'flex';
+                }
+            }
+        
+            function toggleTheme() {
+                const isLiquidGlass = document.body.classList.toggle('liquid-glass');
+                localStorage.setItem('liquidGlassTheme', isLiquidGlass);
+                
+                if (elements.themeToggle) {
+                    const checkbox = elements.themeToggle.querySelector('input');
+                    if (checkbox) {
+                        checkbox.checked = isLiquidGlass;
+                    }
+                }
+                
+                showNotification(isLiquidGlass ? '🌙 Liquid Glass режим включен' : '☀️ Обычный режим', 'success');
+            }
+        
+            // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+        
+            function initialize() {
+                // Загружаем данные
+                initializeData();
+                
+                // Проверяем сохраненную тему
+                const savedTheme = localStorage.getItem('liquidGlassTheme') === 'true';
+                if (savedTheme) {
+                    document.body.classList.add('liquid-glass');
+                    if (elements.themeToggle) {
+                        const checkbox = elements.themeToggle.querySelector('input');
+                        if (checkbox) {
+                            checkbox.checked = true;
+                        }
+                    }
+                }
+                
+                // Проверяем авторизацию
+                const savedUser = localStorage.getItem('currentUser');
+                if (savedUser) {
+                    const user = mockData.users.find(u => u.username === savedUser);
+                    if (user) {
+                        currentUser = savedUser;
+                        isAdmin = user.isAdmin || checkAdmin(savedUser);
+                    }
+                }
+                
+                // Настраиваем обработчики
+                setupEventListeners();
+                
+                // Обновляем интерфейс
+                updateUI();
+                
+                console.log('🚀 Система клана МВД инициализирована');
+            }
+        
+            // Запускаем приложение
             initialize();
         });
     </script>
